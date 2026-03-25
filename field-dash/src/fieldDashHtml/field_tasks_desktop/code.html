@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Civic Horizon | Field Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-background": "#1a1c1c",
+              "surface-container-high": "#e8e8e8",
+              "outline": "#757682",
+              "on-secondary-fixed": "#121a33",
+              "on-primary-fixed-variant": "#2a4386",
+              "background": "#f9f9f9",
+              "on-surface-variant": "#444650",
+              "on-tertiary-fixed": "#390b00",
+              "inverse-on-surface": "#f1f1f1",
+              "tertiary-fixed": "#ffdbd0",
+              "on-error": "#ffffff",
+              "on-surface": "#1a1c1c",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#58607c",
+              "tertiary-container": "#501300",
+              "surface-variant": "#e2e2e2",
+              "inverse-primary": "#b3c5ff",
+              "outline-variant": "#c5c6d2",
+              "inverse-surface": "#2f3131",
+              "primary-container": "#002366",
+              "on-tertiary-container": "#d37758",
+              "on-primary-fixed": "#00174a",
+              "surface-tint": "#435b9f",
+              "primary-fixed-dim": "#b3c5ff",
+              "tertiary-fixed-dim": "#ffb59e",
+              "surface": "#f9f9f9",
+              "error": "#ba1a1a",
+              "secondary": "#555d7a",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#dbe1ff",
+              "secondary-fixed": "#dbe1ff",
+              "primary": "#00113a",
+              "secondary-container": "#d4dcfd",
+              "on-secondary-fixed-variant": "#3e4661",
+              "on-primary": "#ffffff",
+              "error-container": "#ffdad6",
+              "surface-dim": "#dadada",
+              "surface-container-highest": "#e2e2e2",
+              "on-tertiary-fixed-variant": "#783018",
+              "tertiary": "#2d0700",
+              "secondary-fixed-dim": "#bdc5e6",
+              "surface-container-low": "#f3f3f3",
+              "surface-container": "#eeeeee",
+              "surface-bright": "#f9f9f9",
+              "on-primary-container": "#758dd5",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Public Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #c5c6d2; border-radius: 10px; }
+      body { background-color: #f9f9f9; }
+    </style>
+</head>
+<body class="font-body text-on-surface">
+<div class="flex h-screen overflow-hidden">
+<!-- Side Navigation Bar -->
+<aside class="hidden md:flex flex-col h-full py-6 gap-4 bg-[#f3f3f3] dark:bg-slate-900 text-[#00113a] dark:text-blue-400 font-inter text-sm font-semibold fixed left-0 top-0 w-64 border-r border-slate-200/10 shadow-xl shadow-black/5 z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-6">
+<img alt="Officer Avatar" class="w-10 h-10 rounded-full bg-primary-fixed border border-outline-variant/20" data-alt="professional portrait of a field intelligence officer in a modern tactical uniform, soft cinematic lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdUjXV_2xF2zYsH3MBBZXDs2e4pn_977W4On-We8SsQNRfhBbeXGJyxGIV2DAwdAZDIYz3czO3eAKNAP4B0LoayWgx09bCTxr5HXHl7W43B1S_c8ukxN-bEuTAt-vxdBS8t8dc8S2WtR9cW7aoUQA8NNk-IUbKgcyMleAaL8p4zgELQAVYCY3eQauTFJili_Cdn1ojgJaBGSczl-VCTiETJVfSm6Pw-CHeVEgZq0n8bF8Pm1QcQ9ZKoihWCTwbpk6WRMT7ipHr-Zk"/>
+<div>
+<h2 class="font-headline font-black text-[#00113a] dark:text-white leading-tight">Sovereign Archive</h2>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant opacity-70">Field Intelligence Unit</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<!-- Tasks (Active) -->
+<a class="flex items-center gap-3 py-3 px-4 bg-[#ffffff] dark:bg-slate-800 text-[#00113a] dark:text-white rounded-lg shadow-sm mx-2 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>Tasks</span>
+</a>
+<!-- Submit Report -->
+<a class="flex items-center gap-3 py-3 px-4 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Submit Report</span>
+</a>
+<!-- Farmer Registry -->
+<a class="flex items-center gap-3 py-3 px-4 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Farmer Registry</span>
+</a>
+<!-- Sync -->
+<a class="flex items-center gap-3 py-3 px-4 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="sync">sync</span>
+<span>Sync</span>
+</a>
+<!-- Profile -->
+<a class="flex items-center gap-3 py-3 px-4 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span>Profile</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full py-3 bg-error text-white font-bold rounded-lg shadow-md flex items-center justify-center gap-2 active:opacity-80 transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="emergency_home">emergency_home</span>
+<span>Emergency Alert</span>
+</button>
+<button class="w-full mt-4 flex items-center gap-3 py-3 px-4 text-slate-500 hover:text-error transition-colors">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 overflow-y-auto bg-surface custom-scrollbar">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center w-full px-8 h-16 bg-[#f9f9f9] dark:bg-slate-950 sticky top-0 z-50">
+<div class="flex items-center gap-6">
+<span class="text-xl font-bold text-[#00113a] dark:text-white uppercase tracking-widest font-headline">Civic Horizon</span>
+<div class="hidden lg:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-64 placeholder:text-on-surface-variant/50" placeholder="Search tasks or farmers..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-[#f3f3f3] rounded-full transition-colors"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<button class="p-2 text-slate-500 hover:bg-[#f3f3f3] rounded-full transition-colors"><span class="material-symbols-outlined" data-icon="settings">settings</span></button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="Field Officer Profile" data-alt="close up headshot of a professional field worker, friendly expression, natural outdoor light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqDC6NmcMAfwRTelIEMQjM2zNeLV6NGwqU4DtK0Lmz09hQRQmdSitAanfrNX15fclbhjo1gRv01d5enaUja7XeTi2pFzbfGtTtUidKTGSk9y1n3TdpNMN5m8WZ7Pua93SgHAMz4Yoe84MS9lGkiKEZF0TR58RykPIhJqVqb4U_xV1bRCphv3QcDkpVM5eRFW7hBya5y_I0TUmuIwIEPFqCvivBWaR5urE0Q39j-lZNMQX91Wq7gd3ZYBwAwK0GwVpB6SeTCJSLaPQ"/>
+</div>
+</div>
+</header>
+<div class="max-w-6xl mx-auto px-8 py-10">
+<!-- Header Stats & Tabs -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<span class="text-xs font-bold text-on-primary-fixed-variant uppercase tracking-tighter mb-1 block">Operational Dashboard</span>
+<h1 class="text-5xl font-headline font-black text-primary tracking-tight">Intelligence Queue</h1>
+</div>
+<div class="flex bg-surface-container-low p-1 rounded-full w-fit shadow-inner">
+<button class="px-6 py-2 rounded-full bg-white text-primary font-bold shadow-sm transition-all text-sm">Pending Tasks (12)</button>
+<button class="px-6 py-2 rounded-full text-on-surface-variant hover:text-primary transition-all text-sm">Completed Reports</button>
+</div>
+</div>
+<!-- Main Layout: 2 Columns (Tasks & Sync Status) -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+<!-- Task List Section -->
+<div class="xl:col-span-2 space-y-6">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline font-bold text-on-surface-variant">Active Engagements</h3>
+<button class="text-sm font-bold text-primary flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-base" data-icon="filter_list">filter_list</span>
+                                Sort by Priority
+                            </button>
+</div>
+<!-- Priority HIGH -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-8 border-error shadow-sm flex flex-col md:flex-row gap-6 items-center group hover:bg-surface-container-low transition-all duration-300">
+<div class="flex-1 w-full">
+<div class="flex items-center gap-3 mb-2">
+<span class="text-[10px] font-black tracking-widest bg-error-container text-on-error-container px-2 py-0.5 rounded uppercase">Urgent</span>
+<span class="text-xs text-on-surface-variant font-medium">Due: Today, 17:00</span>
+</div>
+<h4 class="text-xl font-headline font-bold text-primary mb-1">Infrastructure Assessment: Northern Bridge</h4>
+<p class="text-on-surface-variant text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                                    Sector 7G, Riverside District
+                                </p>
+</div>
+<button class="w-full md:w-auto px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white font-black rounded shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span>START</span>
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Priority MEDIUM -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-8 border-primary shadow-sm flex flex-col md:flex-row gap-6 items-center group hover:bg-surface-container-low transition-all duration-300">
+<div class="flex-1 w-full">
+<div class="flex items-center gap-3 mb-2">
+<span class="text-[10px] font-black tracking-widest bg-primary-fixed text-primary px-2 py-0.5 rounded uppercase">Standard</span>
+<span class="text-xs text-on-surface-variant font-medium">Due: Tomorrow</span>
+</div>
+<h4 class="text-xl font-headline font-bold text-primary mb-1">Farmer Subsidy Verification</h4>
+<p class="text-on-surface-variant text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                                    Green Valley Cooperatives
+                                </p>
+</div>
+<button class="w-full md:w-auto px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white font-black rounded shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span>START</span>
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Priority LOW -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-8 border-outline shadow-sm flex flex-col md:flex-row gap-6 items-center group hover:bg-surface-container-low transition-all duration-300">
+<div class="flex-1 w-full">
+<div class="flex items-center gap-3 mb-2">
+<span class="text-[10px] font-black tracking-widest bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded uppercase">Routine</span>
+<span class="text-xs text-on-surface-variant font-medium">Due: 24 Oct 2023</span>
+</div>
+<h4 class="text-xl font-headline font-bold text-primary mb-1">Equipment Maintenance Audit</h4>
+<p class="text-on-surface-variant text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                                    Central Storage Hub
+                                </p>
+</div>
+<button class="w-full md:w-auto px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white font-black rounded shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span>START</span>
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Priority MEDIUM -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-8 border-primary shadow-sm flex flex-col md:flex-row gap-6 items-center group hover:bg-surface-container-low transition-all duration-300">
+<div class="flex-1 w-full">
+<div class="flex items-center gap-3 mb-2">
+<span class="text-[10px] font-black tracking-widest bg-primary-fixed text-primary px-2 py-0.5 rounded uppercase">Standard</span>
+<span class="text-xs text-on-surface-variant font-medium">Due: 25 Oct 2023</span>
+</div>
+<h4 class="text-xl font-headline font-bold text-primary mb-1">Livestock Health Inspection</h4>
+<p class="text-on-surface-variant text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                                    Nomadic Path B-12
+                                </p>
+</div>
+<button class="w-full md:w-auto px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white font-black rounded shadow-lg hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span>START</span>
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</div>
+<!-- Side Section: Sync Status & Map Preview -->
+<div class="space-y-8">
+<!-- Sync Monitor -->
+<div class="bg-primary text-white p-8 rounded-xl shadow-2xl relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-headline font-bold text-lg mb-6 border-b border-white/10 pb-4">Completed Archives</h3>
+<div class="space-y-5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="check_circle">check_circle</span>
+<div>
+<p class="text-xs opacity-60">Soil Sample #882</p>
+<p class="text-sm font-medium">SYNCED</p>
+</div>
+</div>
+<span class="text-[10px] font-mono opacity-40">14:22</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="pending">pending</span>
+<div>
+<p class="text-xs opacity-60">Water Quality #104</p>
+<p class="text-sm font-medium">QUEUED</p>
+</div>
+</div>
+<div class="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="bg-tertiary-fixed-dim h-full w-[45%]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error" data-icon="cloud_off">cloud_off</span>
+<div>
+<p class="text-xs opacity-60">Crop Audit #009</p>
+<p class="text-sm font-medium">OFFLINE</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-sm opacity-60" data-icon="refresh">refresh</span>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-white/10 border border-white/20 rounded font-bold hover:bg-white/20 transition-all text-xs tracking-widest uppercase">
+                                    Force Global Sync
+                                </button>
+</div>
+<!-- Subtle abstract bg -->
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-on-primary-container/20 blur-3xl rounded-full"></div>
+</div>
+<!-- Geographic Anchor -->
+<div class="bg-surface-container-lowest p-1 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="h-64 rounded-lg bg-surface-container-high overflow-hidden relative group">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-700" data-alt="a minimalist topographic map style showing a district grid with small marker dots in primary navy blue" data-location="Northern Riverside District" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3fMneetGuKjH_73_Wb__Ij2wgTe3c8UcrRSX4V7FrlTnfXQDTfLDaj4ki2w9ms6cpnl4zuhw5U8RN9m773LSpfnLimPw7SzSd8GcohYuUDWKDXkK9XFXVOtRo-thM8RiXSbYoGZqsi4iQHDdTvuU8sfCD-OLaqf3CHK1ohtHDMEYR6E7tMjasQ72WWWGBOY-TccGzu2avK_sp3NvX4FcAq0c-rzcEN4ih9bvP_Ii0IsFbT4A1QORfntYmtOXiuuxe-GhZKqwXIFQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-[10px] text-white font-bold tracking-widest uppercase">Current Proximity</p>
+<h5 class="text-white font-headline font-bold">Sector 7G Node</h5>
+</div>
+</div>
+<div class="p-6">
+<p class="text-xs text-on-surface-variant leading-relaxed">You are currently within 2.4km of your high-priority task. Intelligence routing suggests taking the Eastern Perimeter route for optimal timing.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation (Responsive Pivot) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant/10 h-16 flex items-center justify-around px-4 z-50">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="text-[10px] font-bold">Tasks</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="text-[10px] font-bold">Map</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="sync">sync</span>
+<span class="text-[10px] font-bold">Sync</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="text-[10px] font-bold">Profile</span>
+</a>
+</div>
+</body></html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-background": "#1a1c1c",
+              "surface-container-high": "#e8e8e8",
+              "outline": "#757682",
+              "on-secondary-fixed": "#121a33",
+              "on-primary-fixed-variant": "#2a4386",
+              "background": "#f9f9f9",
+              "on-surface-variant": "#444650",
+              "on-tertiary-fixed": "#390b00",
+              "inverse-on-surface": "#f1f1f1",
+              "tertiary-fixed": "#ffdbd0",
+              "on-error": "#ffffff",
+              "on-surface": "#1a1c1c",
+              "on-secondary": "#ffffff",
+              "on-secondary-container": "#58607c",
+              "tertiary-container": "#501300",
+              "surface-variant": "#e2e2e2",
+              "inverse-primary": "#b3c5ff",
+              "outline-variant": "#c5c6d2",
+              "inverse-surface": "#2f3131",
+              "primary-container": "#002366",
+              "on-tertiary-container": "#d37758",
+              "on-primary-fixed": "#00174a",
+              "surface-tint": "#435b9f",
+              "primary-fixed-dim": "#b3c5ff",
+              "tertiary-fixed-dim": "#ffb59e",
+              "surface": "#f9f9f9",
+              "error": "#ba1a1a",
+              "secondary": "#555d7a",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#dbe1ff",
+              "secondary-fixed": "#dbe1ff",
+              "primary": "#00113a",
+              "secondary-container": "#d4dcfd",
+              "on-secondary-fixed-variant": "#3e4661",
+              "on-primary": "#ffffff",
+              "error-container": "#ffdad6",
+              "surface-dim": "#dadada",
+              "surface-container-highest": "#e2e2e2",
+              "on-tertiary-fixed-variant": "#783018",
+              "tertiary": "#2d0700",
+              "secondary-fixed-dim": "#bdc5e6",
+              "surface-container-low": "#f3f3f3",
+              "surface-container": "#eeeeee",
+              "surface-bright": "#f9f9f9",
+              "on-primary-container": "#758dd5",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Public Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface flex min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-slate-200/10 bg-[#f3f3f3] dark:bg-slate-900 flex flex-col py-6 gap-4 z-40 shadow-xl shadow-black/5">
+<div class="px-6 mb-8">
+<h1 class="font-headline font-black text-[#00113a] dark:text-white text-xl tracking-tight">Sovereign Archive</h1>
+<p class="text-xs text-on-surface-variant font-medium opacity-70">Field Intelligence Unit</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="font-label text-sm font-semibold">Tasks</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label text-sm font-semibold">Submit Report</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label text-sm font-semibold">Farmer Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 mx-2 hover:bg-[#e8e8e8] dark:hover:bg-slate-800/50 hover:translate-x-1 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="sync">sync</span>
+<span class="font-label text-sm font-semibold">Sync</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#ffffff] dark:bg-slate-800 text-[#00113a] dark:text-white rounded-lg shadow-sm mx-2" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-label text-sm font-semibold">Profile</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="emergency">emergency</span>
+                Emergency Alert
+            </button>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 mt-4 hover:bg-[#e8e8e8] rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label text-sm font-semibold">Logout</span>
+</a>
+</div>
+</aside>
+<main class="ml-64 flex-1 p-12 overflow-y-auto">
+<!-- Header -->
+<header class="mb-12">
+<span class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-2 block">Personnel Dossier</span>
+<h2 class="font-headline text-4xl font-extrabold text-primary tracking-tight">Officer Profile</h2>
+</header>
+<!-- Two Column Layout -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: ID and Assignments -->
+<div class="col-span-12 lg:col-span-5 space-y-8">
+<!-- Digital ID Card -->
+<section class="bg-primary text-on-primary rounded-xl overflow-hidden relative shadow-2xl">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container opacity-50 rounded-bl-full"></div>
+<div class="p-8 relative z-10">
+<div class="flex items-start justify-between mb-8">
+<div>
+<h3 class="font-headline text-xl font-bold uppercase tracking-wider">Civic Horizon</h3>
+<p class="text-[10px] opacity-70 tracking-widest uppercase">Field Intelligence Unit</p>
+</div>
+<span class="material-symbols-outlined text-4xl opacity-40" data-icon="verified_user">verified_user</span>
+</div>
+<div class="flex gap-6">
+<div class="w-32 h-40 bg-white/10 rounded-lg overflow-hidden border border-white/20 flex-shrink-0">
+<img alt="Officer Portrait" class="w-full h-full object-cover grayscale brightness-110 contrast-110" data-alt="professional headshot of a confident field officer in a clean collared shirt with neutral background and soft dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOiyWM4bhSFE8bS4Vjw4Rup-yQuZiHHcJq6xCykKwq6EcyO7SVpr5WASQyJ0whS6UbPnaM9dnudx8vl6KooZFeaIK8yCaPM8KVqCqBeo1aaEi3_GRiRTC5nf5XqnFk4SCIF83bnhh2hQM7_Tuaj3h0-ZFT-V6z8vw3Xs_1mufk2sxTSGyBjL_TBJO7QBywznDcRXQNMmWHnSqEkXbti3nVU1GfzwjB1m6eaNGDRDNHUfV7aaPc9KBTnc82VPRzyR-qukDIrQB9jv4"/>
+</div>
+<div class="flex flex-col justify-center">
+<p class="font-label text-[10px] uppercase text-primary-fixed-dim font-bold">Officer Name</p>
+<p class="font-headline text-2xl font-bold mb-4">Elias Thorne</p>
+<p class="font-label text-[10px] uppercase text-primary-fixed-dim font-bold">Badge ID</p>
+<p class="font-body text-lg font-medium">CH-9420-FIU</p>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-white/10 flex justify-between items-end">
+<div>
+<p class="font-label text-[10px] uppercase text-primary-fixed-dim font-bold">Issued Date</p>
+<p class="font-body text-sm">Jan 12, 2024</p>
+</div>
+<div class="text-right">
+<img alt="Security QR Code" class="w-16 h-16 opacity-80 invert" data-alt="minimalist white qr code on a dark navy background representing digital identification" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkAlobPWZWoXvQ3eGTfQgBw58GS6xs8uIIaCXFW5gBqNZnmR4Shy0iWaRBySWIH16nA5bI2BgEXBjQjWjwUSLbQCnilvBbhN5ErsvzgSeCAS3xl1_pMnKBqAceczagrWlQhk8HHpo3CtGGvpNed9XT4x60j89UiFdSGFEFMBP7jBFCNrD7I1b9xkcKnGXEjNMj541kmrS5CEMAf1lm58zVmgOn0FXC7oqkCSJDty1xgGv1xbTGYFTElmKnIVT2BaEcNxiaf4jBo1U"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Block Assignment Details -->
+<section class="bg-surface-container-lowest rounded-xl p-8">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+<h4 class="font-headline text-lg font-bold">Assigned Jurisdiction</h4>
+</div>
+<div class="space-y-6">
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/15">
+<span class="font-label text-sm text-on-surface-variant font-medium">Region</span>
+<span class="font-body text-sm font-semibold">Central Plateau (Sector 4)</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/15">
+<span class="font-label text-sm text-on-surface-variant font-medium">District Block</span>
+<span class="font-body text-sm font-semibold">Block Alpha-09</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/15">
+<span class="font-label text-sm text-on-surface-variant font-medium">Farmer Count</span>
+<span class="font-body text-sm font-semibold">1,248 Active Units</span>
+</div>
+<div class="flex justify-between items-center py-3">
+<span class="font-label text-sm text-on-surface-variant font-medium">Reporting Officer</span>
+<span class="font-body text-sm font-semibold">Director Sarah Vance</span>
+</div>
+</div>
+<div class="mt-6 rounded-lg overflow-hidden h-32 relative">
+<img alt="District Map" class="w-full h-full object-cover" data-alt="monochrome satellite map view of agricultural fields with geometric shapes and subtle data overlays" data-location="Central Plateau" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFaz5ahe62PFxzSmYqA7T5ekN9mK6PVu07y6H4KlJh960jGWakMx5usc8xrCY_QO4WWV0VC0Nf1E81tM4inFR3z4s8vebpehRs_7ovxzXiO6LyeOoAriV26AZhudwzbFmVKV8VAmvqrihQqU9IKMcf-8jW0bPl3OoX5KTxcHzdWQ0k38Jg0rOZd1Je995zXZusQOq7eP37wssP8ysIFsbG_QHoPCdUXb5KpYAq6I2xyQ2NMzyg-KhiKeeC63Yy_oDMYLGvQxT7Xg4"/>
+<div class="absolute inset-0 bg-primary/20 flex items-center justify-center">
+<button class="bg-white text-primary px-4 py-2 rounded-lg font-bold text-xs shadow-lg">View Full Map</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Performance Dashboard -->
+<div class="col-span-12 lg:col-span-7 space-y-8">
+<!-- Performance Overview Header -->
+<div class="bg-surface-container-low p-8 rounded-xl flex flex-col md:flex-row gap-8 justify-between items-center">
+<div>
+<p class="font-label text-xs uppercase font-bold text-on-surface-variant mb-1">Weekly Performance</p>
+<h4 class="font-headline text-3xl font-extrabold text-primary">Intelligence Status: Optimal</h4>
+</div>
+<div class="flex gap-4">
+<div class="text-center px-6 py-2 bg-surface-container-lowest rounded-lg shadow-sm">
+<p class="font-headline text-2xl font-black text-primary">98%</p>
+<p class="font-label text-[10px] uppercase font-bold text-on-surface-variant">Score</p>
+</div>
+<div class="text-center px-6 py-2 bg-surface-container-lowest rounded-lg shadow-sm">
+<p class="font-headline text-2xl font-black text-on-primary-container">#2</p>
+<p class="font-label text-[10px] uppercase font-bold text-on-surface-variant">Rank</p>
+</div>
+</div>
+</div>
+<!-- Metrics Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Visit Completion -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="p-2 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+</div>
+<span class="font-label text-[10px] font-bold text-on-primary-container bg-primary-fixed/30 px-2 py-1 rounded">+12% vs LW</span>
+</div>
+<div>
+<p class="font-label text-xs font-bold text-on-surface-variant uppercase">Visits Completed</p>
+<h5 class="font-headline text-3xl font-black text-primary">842 / 900</h5>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 93%;"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant font-medium">93.5% of monthly target achieved</p>
+</div>
+<!-- GPS Accuracy -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="p-2 bg-tertiary-fixed rounded-lg text-tertiary">
+<span class="material-symbols-outlined" data-icon="location_searching">location_searching</span>
+</div>
+<span class="font-label text-[10px] font-bold text-on-tertiary-container bg-tertiary-fixed/30 px-2 py-1 rounded">High Fidelity</span>
+</div>
+<div>
+<p class="font-label text-xs font-bold text-on-surface-variant uppercase">GPS Precision</p>
+<h5 class="font-headline text-3xl font-black text-primary">1.2m Avg</h5>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-on-tertiary-container" style="width: 98%;"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant font-medium">Exceeding standard accuracy of 5.0m</p>
+</div>
+<!-- Forms Submitted -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="p-2 bg-secondary-container rounded-lg text-secondary">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+</div>
+</div>
+<div>
+<p class="font-label text-xs font-bold text-on-surface-variant uppercase">Forms Submitted</p>
+<h5 class="font-headline text-3xl font-black text-primary">3,120</h5>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 88%;"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant font-medium">88% of quarterly documentation quota</p>
+</div>
+<!-- Farmer Confirmations -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+<div class="flex justify-between items-start">
+<div class="p-2 bg-inverse-primary rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+</div>
+</div>
+<div>
+<p class="font-label text-xs font-bold text-on-surface-variant uppercase">Unit Confirmations</p>
+<h5 class="font-headline text-3xl font-black text-primary">1,104</h5>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-on-primary-container" style="width: 75%;"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant font-medium">75% of assigned units verified biometrically</p>
+</div>
+</div>
+<!-- Recent Activity Archive -->
+<section class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<div class="px-8 py-6 border-b border-outline-variant/15 flex justify-between items-center">
+<h4 class="font-headline font-bold text-lg">Activity Journal</h4>
+<button class="font-label text-xs font-bold text-primary hover:underline">Download CSV</button>
+</div>
+<div class="divide-y divide-outline-variant/10">
+<!-- Entry 1 -->
+<div class="px-8 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="add_task">add_task</span>
+</div>
+<div>
+<p class="font-body text-sm font-semibold">Report Submitted: Yield Estimate</p>
+<p class="font-label text-xs text-on-surface-variant">Block Alpha-09 • Farmer #2844</p>
+</div>
+</div>
+<p class="font-label text-xs text-on-surface-variant">14:22 PM</p>
+</div>
+<!-- Entry 2 -->
+<div class="px-8 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-sm" data-icon="person_pin">person_pin</span>
+</div>
+<div>
+<p class="font-body text-sm font-semibold">GPS Authentication Verified</p>
+<p class="font-label text-xs text-on-surface-variant">Zone Marker A9-42 • Precision 0.8m</p>
+</div>
+</div>
+<p class="font-label text-xs text-on-surface-variant">11:05 AM</p>
+</div>
+<!-- Entry 3 -->
+<div class="px-8 py-4 flex items-center justify-between hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="sync">sync</span>
+</div>
+<div>
+<p class="font-body text-sm font-semibold">Offline Data Synchronized</p>
+<p class="font-label text-xs text-on-surface-variant">212 cached entries updated to cloud</p>
+</div>
+</div>
+<p class="font-label text-xs text-on-surface-variant">09:15 AM</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>
