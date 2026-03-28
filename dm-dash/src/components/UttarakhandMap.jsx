@@ -35,23 +35,25 @@ function ChangeView({ center, zoom }) {
 
 const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
   const [districtData, setDistrictData] = useState([]);
+  const [stateMetrics, setStateMetrics] = useState(null);
+
 
   useEffect(() => {
     // Current dummy data matching the CSV logic in AnalyticalOverview
     const rawData = [
       ["Almora", 1200, 0.08, 35, 120],
       ["Bageshwar", 800, 0.04, 15, 65],
-      ["Chamoli", 1500, 0.07, 42, 110],
-      ["Champawat", 750, 0.03, 12, 55],
+      ["Chamoli", 1500, 0.07, 2, 20],
+      ["Champawat", 750, 0.03, 72, 552],
       ["Dehradun", 3500, 0.25, 145, 420],
-      ["Haridwar", 2800, 0.18, 98, 310],
+      ["Haridwar", 2800, 0.18, 10, 20],
       ["Nainital", 1800, 0.12, 75, 210],
       ["Pauri Garhwal", 1600, 0.11, 48, 145],
       ["Pithoragarh", 1400, 0.09, 38, 130],
       ["Rudraprayag", 900, 0.05, 22, 85],
       ["Tehri Garhwal", 1700, 0.1, 52, 160],
       ["Udham Singh Nagar", 2400, 0.16, 110, 340],
-      ["Uttarkashi", 1350, 0.08, 32, 115],
+      ["Uttarkashi", 1350, 0.08, 32, 215],
     ];
 
     // Find maximums for normalization to ensure score stays 0-100
@@ -77,10 +79,43 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
         color = "#eab308"; // Yellow
       }
 
-      return { name, ar, gr, score: finalScore.toFixed(0), status, color };
+      return { name, fund, ar, gr, score: finalScore.toFixed(0), status, color };
     });
 
     setDistrictData(processed);
+
+    // Compute State Score
+    const totalFunds = processed.reduce((sum, d) => sum + d.fund, 0);
+    const fundWeightedSum = processed.reduce((sum, d) => sum + (parseFloat(d.score) * d.fund), 0);
+    const fundWeightedAvg = fundWeightedSum / totalFunds;
+
+    const criticalCount = processed.filter(d => d.status === "Critical").length;
+    const criticalRatio = criticalCount / 13;
+
+    // State Score Formula
+    const stateScoreValue = (0.7 * fundWeightedAvg) + (0.3 * (1 - criticalRatio) * 100);
+    
+    let stateStatus = "On-Track";
+    let stateColor = "text-green-500";
+    let stateBg = "bg-green-500/10";
+    if (stateScoreValue < 50) {
+      stateStatus = "Critical";
+      stateColor = "text-error";
+      stateBg = "bg-error/10";
+    } else if (stateScoreValue < 80) {
+      stateStatus = "At Risk";
+      stateColor = "text-amber-500";
+      stateBg = "bg-amber-500/10";
+    }
+
+    setStateMetrics({
+      score: stateScoreValue.toFixed(1),
+      status: stateStatus,
+      color: stateColor,
+      bgColor: stateBg,
+      criticalCount,
+      fundWeightedAvg: fundWeightedAvg.toFixed(1)
+    });
   }, []);
 
   const center =
@@ -185,6 +220,37 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
           </CircleMarker>
         ))}
       </MapContainer>
+
+      {/* State Score Overlay */}
+      {(!selectedDistrict || selectedDistrict === "Uttarakhand") && stateMetrics && (
+        <div className="absolute top-4 left-4 z-[400] bg-surface/90 backdrop-blur-md p-6 rounded-3xl border border-outline-variant/10 shadow-2xl max-w-sm animate-in fade-in duration-300">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h4 className="font-headline font-black text-on-surface text-xl">Uttarakhand State Score</h4>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">Aggregate Performance Index</p>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${stateMetrics.bgColor} ${stateMetrics.color}`}>
+              {stateMetrics.status}
+            </div>
+          </div>
+          
+          <div className="flex items-baseline gap-2 mb-6">
+            <span className={`text-6xl font-headline font-black ${stateMetrics.color}`}>{stateMetrics.score}</span>
+            <span className="text-xl font-bold text-on-surface-variant/40">/100</span>
+          </div>
+
+          <div className="space-y-4 border-t border-outline-variant/10 pt-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium text-on-surface-variant">Fund-Weighted Avg</span>
+              <span className="text-sm font-black text-on-surface">{stateMetrics.fundWeightedAvg}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium text-on-surface-variant">Critical Districts Ratio</span>
+              <span className="text-sm font-black text-on-surface">{stateMetrics.criticalCount} / 13</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Legend Overlay */}
       <div className="absolute top-4 right-4 z-[10] bg-surface/90 backdrop-blur-md p-4 rounded-2xl border border-outline-variant/10 shadow-lg pointer-events-none">

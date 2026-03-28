@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AnalyticalOverview = ({ selectedDistrict }) => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [metrics, setMetrics] = useState({
     fund: 0,
@@ -83,7 +85,10 @@ Uttarkashi,950,0.06,28,80`;
           </div>
         </div>
 
-        <button className="bg-[#00113a] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-3 hover:bg-primary transition-all shadow-lg shadow-primary/20 group">
+        <button 
+          onClick={() => navigate('/advance-analytics')}
+          className="bg-[#00113a] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-3 hover:bg-primary transition-all shadow-lg shadow-primary/20 group"
+        >
           <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">insights</span>
           Advanced Analytics
         </button>

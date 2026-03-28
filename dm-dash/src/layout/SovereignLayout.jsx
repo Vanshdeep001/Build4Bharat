@@ -77,6 +77,18 @@ function SideNav() {
         </NavLink>
 
         <NavLink
+          to="/advance-analytics"
+          className={({ isActive }) =>
+            isActive
+              ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
+              : `${navLinkBase} text-[#758dd5] hover:text-white hover:bg-[#002366]/50`
+          }
+        >
+          <span className="material-symbols-outlined">insights</span>
+          <span className="font-body font-medium text-[0.875rem]">Advance Analytics</span>
+        </NavLink>
+
+        <NavLink
           to="/ai-anomalies"
           className={({ isActive }) =>
             isActive
