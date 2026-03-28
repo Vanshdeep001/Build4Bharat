@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { Navbar } from '../components/Navbar'
 
 const navLinkBase =
   'flex items-center gap-3 px-4 py-3 mx-2 transition-all rounded-lg'
@@ -6,7 +8,7 @@ const navLinkBase =
 function SideNav() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-50 bg-[#00113a] dark:bg-[#00081a] shadow-[8px_0_24px_-4px_rgba(26,28,28,0.06)] flex flex-col py-6 gap-2">
-      <div className="px-6 mb-8">
+      <div className="px-6 mb-8 invisible">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/10 rounded flex items-center justify-center">
             <span className="material-symbols-outlined text-white">account_balance</span>
@@ -114,86 +116,20 @@ function SideNav() {
   )
 }
 
-function TopBar() {
-  return (
-    <header className="sticky top-0 z-40 bg-[#f9f9f9] dark:bg-slate-950 flex justify-between items-center w-full px-8 py-4 border-b border-[#c5c6d2]/15">
-      <div className="flex items-center gap-8">
-        <span className="text-xl font-bold text-[#00113a] dark:text-[#dbe1ff] tracking-tighter">
-          PMDDKY Sovereign
-        </span>
-        <nav className="hidden md:flex gap-6 font-headline font-semibold text-sm tracking-tight">
-          <a
-            className="text-[#444650] dark:text-slate-400 hover:text-[#00113a] dark:hover:text-white transition-colors"
-            href="#"
-          >
-            Overview
-          </a>
-          <a
-            className="text-[#444650] dark:text-slate-400 hover:text-[#00113a] dark:hover:text-white transition-colors"
-            href="#"
-          >
-            Reports
-          </a>
-          <a
-            className="text-[#444650] dark:text-slate-400 hover:text-[#00113a] dark:hover:text-white transition-colors"
-            href="#"
-          >
-            Alerts
-          </a>
-        </nav>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative hidden lg:block">
-          <input
-            className="bg-surface-container-low border-none rounded-full px-4 py-1.5 text-xs w-64 focus:ring-1 focus:ring-primary transition-all"
-            placeholder="Search archive..."
-            type="text"
-          />
-          <span className="material-symbols-outlined absolute right-3 top-1.5 text-sm text-on-surface-variant">
-            search
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <button className="p-2 rounded-full hover:bg-[#f3f3f3] transition-all">
-            <span className="material-symbols-outlined text-[#00113a]">
-              notifications
-            </span>
-          </button>
-          <button className="p-2 rounded-full hover:bg-[#f3f3f3] transition-all">
-            <span className="material-symbols-outlined text-[#00113a]">
-              filter_list
-            </span>
-          </button>
-          <button className="p-2 rounded-full hover:bg-[#f3f3f3] transition-all">
-            <span className="material-symbols-outlined text-[#00113a]">
-              settings
-            </span>
-          </button>
-          <button
-            className="p-0.5 rounded-full hover:bg-[#f3f3f3] transition-all"
-            type="button"
-            aria-label="User profile"
-          >
-            <img
-              className="w-9 h-9 rounded-full object-cover border border-outline-variant/30"
-              alt="User profile avatar"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCedhp8YayUuYryM2vA_5S13v0FyQpyKFkr-nwZ7DbPCSBubGbxKMWf0i-jsbXXKokCjfJOOYw_1bpqPfg-QAFVs6XA6RGgrRSsOaEkeZO_tYJGgXTPQj0NgIstB_mv9mGn_LkKQ9wjtkRqVNgJuf6m-Xk7s1x7MTrzbu1k05CbrAZjVT19H_HId9RlzB9R0jkRx6NjPzdm--8xBdU55WxRsGVL18fvFW1vG2R8d38qHc-K1V4hpxBlexo6YrKMeOPhVF-reQFy0F4"
-            />
-          </button>
-        </div>
-      </div>
-    </header>
-  )
-}
-
 export function SovereignLayout() {
+  const [selectedDistrict, setSelectedDistrict] = useState('Uttarakhand')
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-surface">
       <SideNav />
       <main className="ml-64 min-h-screen">
-        <TopBar />
-        <Outlet />
+        <Navbar 
+          selectedDistrict={selectedDistrict} 
+          onDistrictChange={setSelectedDistrict} 
+        />
+        <div className="px-8 py-6 max-w-[1600px] mx-auto">
+          <Outlet context={{ selectedDistrict, setSelectedDistrict }} />
+        </div>
       </main>
     </div>
   )
