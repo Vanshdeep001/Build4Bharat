@@ -1,11 +1,16 @@
 import { io } from 'socket.io-client';
 
+// Derive the backend base URL from the API env var (strip /api suffix)
+const BACKEND_URL = import.meta.env.VITE_PUBLIC_API_URL
+  ? import.meta.env.VITE_PUBLIC_API_URL.replace(/\/api\/?$/, '')
+  : window.location.origin;
+
 let socket = null;
 
 export function connectSocket(districtId) {
   if (socket?.connected) return socket;
 
-  socket = io(window.location.origin, {
+  socket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 2000,
