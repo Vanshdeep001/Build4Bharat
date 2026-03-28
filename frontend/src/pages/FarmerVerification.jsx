@@ -9,20 +9,30 @@ export default function FarmerVerification() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  // Simulating fetching validation data from backend using submissionId
-  // For this scope, we just assume the link is valid.
-  
+  const [submission, setSubmission] = useState(null);
   const [form, setForm] = useState({
     benefit_received: null,
     quality_rating: 0,
     issue_description: ''
   });
-  
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // In a real app, verify the submissionId exists and hasn't been verified yet.
-    setLoading(false);
+    // Fetch submission details to get district_id and block_id
+    const fetchSubmission = async () => {
+      try {
+        const token = localStorage.getItem('pmddky_token');
+        if (token) {
+          const res = await api.get(`/submissions/${submissionId}`);
+          setSubmission(res.data);
+        }
+      } catch (err) {
+        // Submission lookup may fail for public links — that's OK
+        console.log('Could not look up submission details');
+      }
+      setLoading(false);
+    };
+    fetchSubmission();
   }, [submissionId]);
 
   const handleSubmit = async (e) => {
@@ -38,8 +48,8 @@ export default function FarmerVerification() {
     try {
       await api.post('/verifications', {
         submission_id: submissionId,
-        district_id: 'unknown', // Typically fetched from the backend via the submission lookup
-        block_id: 'unknown',
+        district_id: submission?.district_id || 'unknown',
+        block_id: submission?.block_id || 'unknown',
         channel: 'sms_link',
         benefit_received: form.benefit_received,
         quality_rating: form.quality_rating,
