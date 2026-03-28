@@ -2,6 +2,8 @@ import { useOutletContext } from 'react-router-dom';
 import AnalyticalOverview from '../components/AnalyticalOverview';
 import DistrictBlockMap from '../components/DistrictBlockMap';
 import AdvanceAnalyticsGraphs from '../components/AdvanceAnalyticsGraphs';
+import DistrictComparison from '../components/DistrictComparison';
+
 
 
 export function AdvanceAnalyticsPage() {
@@ -38,6 +40,9 @@ export function AdvanceAnalyticsPage() {
 
       {/* Advanced Micro-Graphs Section */}
       <AdvanceAnalyticsGraphs selectedDistrict={selectedDistrict} />
+
+      {/* District Comparison Section */}
+      <DistrictComparison />
     </div>
   );
 }

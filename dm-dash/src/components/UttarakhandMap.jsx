@@ -221,36 +221,7 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
         ))}
       </MapContainer>
 
-      {/* State Score Overlay */}
-      {(!selectedDistrict || selectedDistrict === "Uttarakhand") && stateMetrics && (
-        <div className="absolute top-4 left-4 z-[400] bg-surface/90 backdrop-blur-md p-6 rounded-3xl border border-outline-variant/10 shadow-2xl max-w-sm animate-in fade-in duration-300">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h4 className="font-headline font-black text-on-surface text-xl">Uttarakhand State Score</h4>
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">Aggregate Performance Index</p>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${stateMetrics.bgColor} ${stateMetrics.color}`}>
-              {stateMetrics.status}
-            </div>
-          </div>
-          
-          <div className="flex items-baseline gap-2 mb-6">
-            <span className={`text-6xl font-headline font-black ${stateMetrics.color}`}>{stateMetrics.score}</span>
-            <span className="text-xl font-bold text-on-surface-variant/40">/100</span>
-          </div>
 
-          <div className="space-y-4 border-t border-outline-variant/10 pt-4">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-on-surface-variant">Fund-Weighted Avg</span>
-              <span className="text-sm font-black text-on-surface">{stateMetrics.fundWeightedAvg}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-on-surface-variant">Critical Districts Ratio</span>
-              <span className="text-sm font-black text-on-surface">{stateMetrics.criticalCount} / 13</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Legend Overlay */}
       <div className="absolute top-4 right-4 z-[10] bg-surface/90 backdrop-blur-md p-4 rounded-2xl border border-outline-variant/10 shadow-lg pointer-events-none">
