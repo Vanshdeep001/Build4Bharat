@@ -1,19 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Unbounded:wght@200..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Unbounded:wght@200..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-display: 'Syne', sans-serif;
-  --font-mono: 'Unbounded', monospace;
-  
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Syne", sans-serif;
+  --font-mono: "Unbounded", monospace;
+
   --color-brand-creme: #fcfaf2;
   --color-brand-clay: #f1f0e8;
   --color-brand-ink: #0a0a0a;
-  
+
   --color-primary-600: #1a44d6;
   --color-primary-500: #2d5cf7;
   --color-primary-400: #5c85ff;
-  
+
   --color-accent-cobalt: #2d5cf7;
   --color-accent-terracotta: #e27d60;
 
@@ -29,17 +29,27 @@
     background-repeat: repeat;
     background-blend-mode: soft-light;
   }
-  
-  h1, h2, h3 {
+
+  h1,
+  h2,
+  h3 {
     @apply font-display font-extrabold tracking-tight;
   }
 }
 
 @keyframes float {
-  0% { transform: translate(0px, 0px) rotate(0deg); }
-  33% { transform: translate(15px, -15px) rotate(2deg); }
-  66% { transform: translate(-10px, 10px) rotate(-1deg); }
-  100% { transform: translate(0px, 0px) rotate(0deg); }
+  0% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  33% {
+    transform: translate(15px, -15px) rotate(2deg);
+  }
+  66% {
+    transform: translate(-10px, 10px) rotate(-1deg);
+  }
+  100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
 }
 
 /* Organic Section - A carved surface look */
