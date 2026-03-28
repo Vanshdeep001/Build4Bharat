@@ -5,10 +5,19 @@ from contextlib import asynccontextmanager
 from database import connect_db, close_db
 from config import settings
 
+# ── Allowed Origins ────────────────────────────────────────────
+_allowed_origins = [
+    "https://pwa-six-puce.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+if settings.FRONTEND_URL and settings.FRONTEND_URL not in _allowed_origins:
+    _allowed_origins.insert(0, settings.FRONTEND_URL)
+
 # ── Socket.IO ──────────────────────────────────────────────────
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=[],
+    cors_allowed_origins=_allowed_origins,
     logger=False,
     engineio_logger=False,
 )
@@ -73,7 +82,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
