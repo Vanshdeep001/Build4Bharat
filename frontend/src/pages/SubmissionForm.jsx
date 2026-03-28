@@ -1,85 +1,103 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOfflineSync } from '../utils/OfflineSyncContext';
 import api from '../utils/api';
 
-const ASSIGNED_PROJECTS = [
-  { id: 'proj-1', name: 'Seed Distribution - Dunda Zone A', type: 'seed_distribution', icon: '🌱' },
-  { id: 'proj-2', name: 'Canal Insp - Bhatwari Sector 3', type: 'irrigation_work', icon: '💧' }
-];
-
 export default function SubmissionForm() {
   const { user } = useAuth();
+  const { farmerId } = useParams();
+  const [searchParams] = useSearchParams();
   const { isOnline, addToQueue, syncData } = useOfflineSync();
   const navigate = useNavigate();
-  
-  const [step, setStep] = useState(1);
+  const cameraInputRef = useRef(null);
+
+  const farmerName = searchParams.get('name') || 'Unknown Farmer';
+  const farmerVillage = searchParams.get('village') || 'Unknown';
+  const taskType = searchParams.get('task') || 'seed_distribution';
+  const currentStatus = searchParams.get('status') || 'in_progress';
+
+  const taskLabel = taskType === 'seed_distribution' ? 'Seed Distribution' : 'Canal Inspection';
+
+  const [form, setForm] = useState({
+    status: currentStatus,
+    description: '',
+    photoBase64: null,
+    gps_lat: null,
+    gps_lng: null,
+  });
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  
-  const [form, setForm] = useState({
-    project_id: '',
-    completion_percentage: 50,
-    materials_used: '',
-    work_description: '',
-    gps_lat: null,
-    gps_lng: null,
-    photoBase64: null,
-  });
+  const [gpsLoading, setGpsLoading] = useState(false);
 
-  const handlePhotoChange = (e) => {
+  // Capture GPS when photo is taken or selected
+  const captureGPS = () => {
+    setGpsLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setForm(prev => ({
+            ...prev,
+            gps_lat: position.coords.latitude,
+            gps_lng: position.coords.longitude,
+          }));
+          setGpsLoading(false);
+        },
+        (err) => {
+          console.warn('Geolocation failed:', err.message);
+          // Fallback to demo coordinates
+          setForm(prev => ({
+            ...prev,
+            gps_lat: 30.75 + (Math.random() * 0.05),
+            gps_lng: 78.45 + (Math.random() * 0.05),
+          }));
+          setGpsLoading(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      setGpsLoading(false);
+    }
+  };
+
+  const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => setForm({ ...form, photoBase64: ev.target.result });
+      reader.onload = (ev) => {
+        setForm(prev => ({ ...prev, photoBase64: ev.target.result }));
+        // Capture GPS coordinates when photo is taken
+        captureGPS();
+      };
       reader.readAsDataURL(file);
     }
   };
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setForm(prev => ({ 
-            ...prev, 
-            gps_lat: position.coords.latitude, 
-            gps_lng: position.coords.longitude 
-          }));
-        },
-        (err) => {
-          console.warn('Geolocation failed:', err.message);
-          // Fallback to demo location if needed
-          setForm(prev => ({ 
-            ...prev, 
-            gps_lat: 30.75 + (Math.random() * 0.05), 
-            gps_lng: 78.45 + (Math.random() * 0.05)
-          }));
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    }
-  };
-
-  useEffect(() => {
-    if (step === 3 && !form.gps_lat) {
-      getLocation();
-    }
-  }, [step]);
-
   const handleSubmit = async () => {
+    if (!form.description.trim()) {
+      setError('Please enter a description.');
+      return;
+    }
+    if (!form.photoBase64) {
+      setError('Please take or upload a photo.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     const submissionData = {
       district_id: user.district_id || 'unknown',
       block_id: user.block_id || 'unknown',
-      village: 'Field Location',
-      activity_type: ASSIGNED_PROJECTS.find(p => p.id === form.project_id)?.type || 'general',
-      completion_percentage: form.completion_percentage,
-      materials_used: form.materials_used,
-      work_description: form.work_description || 'None',
+      village: farmerVillage,
+      activity_type: taskType,
+      completion_percentage: form.status === 'completed' ? 100 : form.status === 'in_progress' ? 50 : 0,
+      work_description: form.description || 'None',
+      farmer_name: farmerName,
+      farmer_id: farmerId || '',
+      task_status: form.status,
       project_gps_lat: form.gps_lat,
       project_gps_lng: form.gps_lng,
       photoBase64: form.photoBase64,
@@ -88,11 +106,10 @@ export default function SubmissionForm() {
     if (!isOnline) {
       const offlineItem = await addToQueue(submissionData);
       setResult({
-        offline: true, 
+        offline: true,
         message: 'Saved on phone. Will send when internet is back!',
         hash: 'OFFLINE-' + offlineItem.id.slice(-6)
       });
-      setStep(5);
       setLoading(false);
       return;
     }
@@ -107,7 +124,7 @@ export default function SubmissionForm() {
           const ab = new ArrayBuffer(byteString.length);
           const ia = new Uint8Array(ab);
           for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-          const blob = new Blob([ab], {type: mimeString});
+          const blob = new Blob([ab], { type: mimeString });
           formData.append('photo', blob, 'capture.jpg');
         } else if (key !== 'photoBase64' && submissionData[key] !== null) {
           formData.append(key, submissionData[key]);
@@ -118,263 +135,244 @@ export default function SubmissionForm() {
       const res = await api.post('/submissions', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       setResult({
         offline: false,
-        message: res.data.is_anomaly ? 'Sent! (Under Review)' : 'Sent successfully!',
+        message: res.data.is_anomaly ? 'Sent! (Under Review)' : 'Submitted successfully!',
         hash: res.data.submission_hash,
         is_anomaly: res.data.is_anomaly
       });
-      setStep(5);
       syncData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Sending failed. Please try again.');
+      setError(err.response?.data?.detail || 'Submission failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const getWhatsappLink = () => {
-    const p = ASSIGNED_PROJECTS.find(x => x.id === form.project_id);
-    const text = encodeURIComponent(`Namaskar! Work verification for: ${p?.name}\nProgress: ${form.completion_percentage}%\nReceipt ID: ${result?.hash || 'demo'}\nPlease check!`);
-    return `https://wa.me/919876543210?text=${text}`;
+    const statusText = form.status === 'completed' ? 'Completed' : form.status === 'in_progress' ? 'In Progress' : 'Not Completed';
+    const text = encodeURIComponent(
+      `Namaskar!\n\n📋 *PMDDKY Field Report Receipt*\n\n👤 Farmer: ${farmerName}\n📍 Village: ${farmerVillage}\n📌 Task: ${taskLabel}\n📊 Status: ${statusText}\n🔖 Receipt ID: ${result?.hash || 'N/A'}\n\nThis is an official submission confirmation from PMDDKY GroundTruth system.`
+    );
+    return `https://wa.me/919554391773?text=${text}`;
   };
 
+  // ── Success Screen ──
+  if (result) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-4 bg-surface">
+        <div className="max-w-xl mx-auto text-center space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-success-light flex items-center justify-center">
+            <span className="text-4xl">{result.offline ? '💾' : '✅'}</span>
+          </div>
+          <h2 className="text-2xl font-bold text-ink">Done!</h2>
+          <p className="text-sm text-ink-secondary">{result.message}</p>
+          <div className="card bg-ink text-white text-xs font-mono p-3 break-all text-left">
+            ID: {result.hash}
+          </div>
+
+          {/* WhatsApp Receipt */}
+          <a
+            href={getWhatsappLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-4 bg-[#25D366] text-white font-bold text-sm rounded-lg flex items-center justify-center gap-3"
+          >
+            📩 Send Receipt on WhatsApp
+          </a>
+
+          <button
+            onClick={() => navigate('/field')}
+            className="btn-primary w-full py-4"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen pt-44 pb-20 px-4 bg-brand-creme">
-      <div className="max-w-xl mx-auto">
-        
-        {/* Progress Tape */}
-        <div className="flex gap-2 mb-12 h-1 px-2">
-           {[1, 2, 3, 4].map(s => (
-             <div 
-               key={s} 
-               className={`flex-1 transition-all duration-700 rounded-full ${s <= step ? 'bg-accent-cobalt shadow-[0_0_10px_rgba(45,92,247,0.5)]' : 'bg-brand-ink/10'}`}
-             />
-           ))}
+    <div className="min-h-screen pt-24 pb-16 px-4 bg-surface">
+      <div className="max-w-xl mx-auto space-y-5">
+
+        {/* Farmer Info Header */}
+        <div className="card">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+              {farmerName.split(' ').map(n => n[0]).join('')}
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-ink">{farmerName}</h1>
+              <p className="text-xs text-ink-muted">{farmerVillage} • {taskLabel}</p>
+            </div>
+          </div>
         </div>
 
-        {/* Content Section */}
-        <div className="space-y-12">
-          
-          {/* Step 1: Destination Selection */}
-          {step === 1 && (
-            <div className="space-y-8 animate-in slide-in-from-right-12 duration-500">
-               <div>
-                 <h2 className="text-display text-4xl font-black uppercase leading-none mb-4 text-brand-ink">Choose<br/>Work</h2>
-                 <p className="text-label text-brand-ink">Step 1 of 4</p>
-               </div>
+        {/* Status Section */}
+        <div className="card space-y-3">
+          <h2 className="text-sm font-bold text-ink uppercase tracking-wide">Task Status</h2>
 
-               <div className="space-y-4">
-                 {ASSIGNED_PROJECTS.map(p => (
-                   <button
-                    key={p.id}
-                    onClick={() => setForm({ ...form, project_id: p.id })}
-                    className={`w-full p-6 text-left transition-all duration-300 border-2 ${
-                      form.project_id === p.id
-                        ? 'bg-accent-cobalt text-white border-brand-ink shadow-[6px_6px_0px_black] translate-x-[-2px] translate-y-[-2px]'
-                        : 'bg-white border-brand-ink/10 text-brand-ink hover:border-brand-ink shadow-[4px_4px_0px_rgba(0,0,0,0.05)]'
-                    }`}
-                   >
-                     <div className="flex items-center justify-between">
-                       <span className="font-display font-bold text-lg">{p.name}</span>
-                       <span className="text-xl">{p.icon}</span>
-                     </div>
-                   </button>
-                 ))}
-               </div>
+          <div className="space-y-2">
+            {/* In Progress */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                form.status === 'in_progress'
+                  ? 'border-warning bg-warning-light'
+                  : 'border-border bg-surface'
+              }`}
+            >
+              <input
+                type="radio"
+                name="status"
+                value="in_progress"
+                checked={form.status === 'in_progress'}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-4 h-4 accent-warning"
+              />
+              <span className="text-lg">🔄</span>
+              <span className="text-sm font-semibold text-ink">In Progress</span>
+            </label>
 
-               <div className="pt-8">
-                 <button 
-                  onClick={() => setStep(2)} 
-                  disabled={!form.project_id}
-                  className="btn-capsule w-full disabled:opacity-30 disabled:grayscale"
-                 >
-                   NEXT →
-                 </button>
-               </div>
-            </div>
-          )}
+            {/* Completed */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                form.status === 'completed'
+                  ? 'border-success bg-success-light'
+                  : 'border-border bg-surface'
+              }`}
+            >
+              <input
+                type="radio"
+                name="status"
+                value="completed"
+                checked={form.status === 'completed'}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-4 h-4 accent-success"
+              />
+              <span className="text-lg">✅</span>
+              <span className="text-sm font-semibold text-ink">Completed</span>
+            </label>
 
-          {/* Step 2: Details */}
-          {step === 2 && (
-            <div className="space-y-10 animate-in slide-in-from-right-12 duration-500">
-               <div>
-                 <h2 className="text-display text-4xl font-black uppercase leading-none mb-4 text-brand-ink">Enter<br/>Details</h2>
-                 <p className="text-label text-brand-ink">Step 2 of 4</p>
-               </div>
-               
-               <div className="organic-panel p-8 rounded-[40px] space-y-8">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                      <label className="text-label text-brand-ink font-black">How much is done?</label>
-                      <span className="font-display font-black text-4xl text-brand-ink">{form.completion_percentage}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0" max="100" step="10"
-                      value={form.completion_percentage}
-                      onChange={(e) => setForm({ ...form, completion_percentage: parseInt(e.target.value) })}
-                      className="w-full h-1 bg-black/10 appearance-none cursor-pointer accent-accent-cobalt"
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                     <label className="block text-label text-brand-ink font-black">What was used?</label>
-                     <input
-                      type="text"
-                      value={form.materials_used}
-                      onChange={(e) => setForm({ ...form, materials_used: e.target.value })}
-                      placeholder="e.g. 5 bags of seeds"
-                      className="input-minimal"
-                     />
-                  </div>
-               </div>
-
-               <div className="flex gap-4">
-                 <button onClick={() => setStep(1)} className="px-8 py-4 border-2 border-brand-ink font-mono font-bold uppercase transition hover:bg-brand-ink hover:text-white rounded-full">BACK</button>
-                 <button 
-                  onClick={() => setStep(3)} 
-                  disabled={!form.materials_used}
-                  className="btn-capsule flex-1 disabled:opacity-30"
-                 >
-                   NEXT →
-                 </button>
-               </div>
-            </div>
-          )}
-
-          {/* Step 3: Photo */}
-          {step === 3 && (
-            <div className="space-y-10 animate-in slide-in-from-right-12 duration-500">
-               <div>
-                 <h2 className="text-display text-4xl font-black uppercase leading-none mb-4 text-brand-ink">Take<br/>Photo</h2>
-                 <p className="text-label text-brand-ink">Step 3 of 4</p>
-               </div>
-               
-               <label className="group block relative cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                  <div className={`aspect-square w-full border-4 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center gap-6 rounded-[40px] ${
-                    form.photoBase64 ? 'border-emerald-500' : 'border-brand-ink/10 bg-brand-clay hover:border-brand-ink'
-                  }`}>
-                    {form.photoBase64 ? (
-                      <img src={form.photoBase64} alt="Captured" className="w-full h-full object-cover" />
-                    ) : (
-                      <>
-                        <div className="w-20 h-20 rounded-full border-2 border-brand-ink flex items-center justify-center text-4xl group-hover:scale-125 transition-transform duration-700">📸</div>
-                        <p className="text-label text-center px-8 text-brand-ink">CLICK TO TAKE PHOTO OF WORK</p>
-                      </>
-                    )}
-                  </div>
-               </label>
-
-               <div className="bg-brand-ink text-white p-5 flex items-center justify-between rounded-2xl shadow-[8px_8px_0px_rgba(0,0,0,0.1)]">
-                  <div className="flex items-center gap-4">
-                    <span className={`w-3 h-3 rounded-full ${form.gps_lat ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 animate-spin'}`}></span>
-                    <span className="text-label text-white">Location: {form.gps_lat ? 'LOCKED' : 'FINDING...'}</span>
-                  </div>
-                  {form.gps_lat && <span className="text-label text-white/60">{form.gps_lat.toFixed(4)}, {form.gps_lng.toFixed(4)}</span>}
-               </div>
-
-               <div className="flex gap-4">
-                 <button onClick={() => setStep(2)} className="px-8 py-4 border-2 border-brand-ink font-mono font-bold uppercase transition hover:bg-brand-ink hover:text-white rounded-full">BACK</button>
-                 <button 
-                  onClick={() => setStep(4)} 
-                  disabled={!form.photoBase64 || !form.gps_lat}
-                  className="btn-capsule flex-1 disabled:opacity-30"
-                 >
-                   NEXT →
-                 </button>
-               </div>
-            </div>
-          )}
-
-          {/* Step 4: Final Sign-off */}
-          {step === 4 && (
-            <div className="space-y-10 animate-in slide-in-from-right-12 duration-500">
-               <div>
-                 <h2 className="text-display text-4xl font-black uppercase leading-none mb-4 text-brand-ink">Final<br/>Check</h2>
-                 <p className="text-label text-brand-ink">Last Step</p>
-               </div>
-
-               <div className="bento-tile p-8 divide-y-4 divide-brand-ink/10">
-                  <div className="py-6 flex justify-between items-center">
-                     <span className="text-label text-brand-ink">Project</span>
-                     <span className="font-display font-black text-lg tracking-tight text-brand-ink text-right max-w-[200px]">{ASSIGNED_PROJECTS.find(p => p.id === form.project_id)?.name}</span>
-                  </div>
-                  <div className="py-6 flex justify-between items-center">
-                     <span className="text-label text-brand-ink">Progress</span>
-                     <span className="font-display font-black text-3xl italic text-accent-cobalt">{form.completion_percentage}%</span>
-                  </div>
-                  <div className="py-6 space-y-4">
-                     <span className="text-label text-brand-ink block mb-2">Used</span>
-                     <p className="text-xl font-black bg-brand-clay p-6 rounded-2xl border-2 border-brand-ink text-brand-ink shadow-[4px_4px_0px_black]">
-                       {form.materials_used}
-                     </p>
-                  </div>
-               </div>
-
-               {error && (
-                 <p className="text-center text-rose-600 font-mono text-[10px] uppercase font-bold">{error}</p>
-               )}
-
-               <div className="flex gap-4">
-                 <button onClick={() => setStep(3)} className="px-8 py-4 border-2 border-brand-ink font-mono font-bold uppercase transition hover:bg-brand-ink hover:text-white rounded-full" disabled={loading}>BACK</button>
-                 <button 
-                  onClick={handleSubmit} 
-                  disabled={loading}
-                  className="btn-capsule flex-1"
-                 >
-                   {loading ? 'SENDING...' : 'YES, SUBMIT'}
-                 </button>
-               </div>
-            </div>
-          )}
-
-          {/* Step 5: Finished */}
-          {step === 5 && result && (
-            <div className="text-center space-y-8 animate-in zoom-in-95 duration-700">
-               <div className="inline-block relative">
-                  <div className="w-32 h-32 rounded-full border-8 border-brand-ink flex items-center justify-center text-4xl shadow-[8px_8px_0px_#2d5cf7] bg-white">
-                    {result.offline ? '💾' : '🏁'}
-                  </div>
-               </div>
-               
-               <div className="space-y-4">
-                 <h2 className="text-display text-4xl font-black uppercase tracking-tighter text-brand-ink">Done!</h2>
-                 <p className="text-sm font-bold text-brand-ink px-8">{result.message}</p>
-                 <div className="mt-8 p-4 bg-brand-ink text-white font-mono text-[10px] rounded-2xl break-all mx-4 select-all shadow-xl">
-                    ID: {result.hash}
-                 </div>
-               </div>
-
-               <div className="pt-12 space-y-4">
-                   <a
-                   href={getWhatsappLink()}
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   className="w-full py-5 bg-[#25D366] text-white font-display font-black uppercase text-sm rounded-full flex items-center justify-center gap-4 border-4 border-brand-ink shadow-[8px_8px_0px_black] hover:bg-white hover:text-[#25D366] transition-all active:translate-y-[4px] active:shadow-none"
-                 >
-                   📡 SEND TO FARMER
-                 </a>
-
-                 <button
-                   onClick={() => navigate('/field')}
-                   className="w-full py-4 font-mono font-bold text-[10px] uppercase underline tracking-widest text-brand-ink"
-                 >
-                   Go Back to Dashboard
-                 </button>
-               </div>
-            </div>
-          )}
-
+            {/* Not Completed */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                form.status === 'not_completed'
+                  ? 'border-danger bg-danger-light'
+                  : 'border-border bg-surface'
+              }`}
+            >
+              <input
+                type="radio"
+                name="status"
+                value="not_completed"
+                checked={form.status === 'not_completed'}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-4 h-4 accent-danger"
+              />
+              <span className="text-lg">❌</span>
+              <span className="text-sm font-semibold text-ink">Not Completed</span>
+            </label>
+          </div>
         </div>
+
+        {/* Description Section */}
+        <div className="card space-y-3">
+          <h2 className="text-sm font-bold text-ink uppercase tracking-wide">Description</h2>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Write details about the field visit, observations, materials used..."
+            rows={4}
+            className="input-field resize-none"
+          />
+        </div>
+
+        {/* Photo & GPS Section */}
+        <div className="card space-y-4">
+          <h2 className="text-sm font-bold text-ink uppercase tracking-wide">Photo Evidence</h2>
+
+          {/* Photo Preview */}
+          {form.photoBase64 && (
+            <div className="relative rounded-lg overflow-hidden border border-border">
+              <img src={form.photoBase64} alt="Captured" className="w-full h-56 object-cover" />
+              <button
+                onClick={() => setForm({ ...form, photoBase64: null, gps_lat: null, gps_lng: null })}
+                className="absolute top-2 right-2 w-8 h-8 bg-danger text-white rounded-full flex items-center justify-center text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* GPS Info (shown after photo is taken) */}
+          {form.photoBase64 && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border">
+              <span className={`w-3 h-3 rounded-full ${form.gps_lat ? 'bg-success' : gpsLoading ? 'bg-warning' : 'bg-danger'}`}></span>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-ink">
+                  {gpsLoading ? 'Fetching location...' : form.gps_lat ? 'Location Captured' : 'Location unavailable'}
+                </p>
+                {form.gps_lat && (
+                  <p className="text-xs text-ink-muted font-mono">
+                    {form.gps_lat.toFixed(6)}, {form.gps_lng.toFixed(6)}
+                  </p>
+                )}
+              </div>
+              {form.gps_lat && (
+                <span className="status-pill bg-success-light text-success">GPS ✓</span>
+              )}
+            </div>
+          )}
+
+          {/* Camera Capture Button */}
+          {!form.photoBase64 && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-3 w-full p-8 border-2 border-dashed border-border-strong rounded-lg hover:bg-surface"
+              >
+                <span className="text-4xl">📷</span>
+                <span className="text-sm font-bold text-ink">Take Photo</span>
+                <span className="text-xs text-ink-muted">Camera only — GPS will be captured automatically</span>
+              </button>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoCapture}
+                className="hidden"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="p-3 bg-danger-light border border-danger text-danger text-sm font-bold rounded-lg text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Submit */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/field')}
+            className="btn-outline flex-shrink-0"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="btn-primary flex-1 py-4 text-base"
+          >
+            {loading ? 'Submitting...' : 'Submit Report'}
+          </button>
+        </div>
+
       </div>
     </div>
   );

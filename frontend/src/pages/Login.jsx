@@ -14,7 +14,7 @@ export default function Login() {
     e?.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const user = await login(phone, password);
       if (user.role === 'field_agent') {
@@ -35,66 +35,59 @@ export default function Login() {
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-brand-creme overflow-hidden">
-      
-      {/* Left Immersive Section */}
-      <div className="w-full md:w-[60%] h-[35vh] md:h-full bg-brand-clay flex flex-col justify-center p-8 md:p-20 relative overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-500/10 rounded-full blur-[120px] animate-float"></div>
-        
-        <div className="relative z-10 space-y-4">
-          <div className="w-16 h-1 bg-black mb-12"></div>
-          <h1 className="text-hero text-black uppercase leading-tight">
+    <div className="h-screen flex flex-col md:flex-row bg-surface overflow-hidden">
+
+      {/* Left Section */}
+      <div className="w-full md:w-[55%] h-[30vh] md:h-full bg-primary flex flex-col justify-center p-8 md:p-16">
+        <div className="space-y-4">
+          <div className="w-12 h-1 bg-white/40 mb-8"></div>
+          <h1 className="text-4xl md:text-6xl font-bold text-white uppercase leading-tight tracking-tight">
             PMDDKY
           </h1>
-          <p className="font-display font-black text-xs md:text-sm uppercase tracking-tight text-black">
-            Pradhan Mantri Dhan-Dhaanya<br/>Krishi Yojana
+          <p className="text-sm md:text-base font-semibold text-white/80 uppercase tracking-wide">
+            Pradhan Mantri Dhan-Dhaanya<br />Krishi Yojana
           </p>
-        </div>
-
-        <div className="absolute bottom-12 left-12 md:left-20">
-          <div className="flex gap-2">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="w-2 h-2 rounded-full border border-black/20"></div>
-            ))}
-          </div>
+          <p className="text-xs text-white/50 mt-4">
+            Field Agent Portal • Government of India
+          </p>
         </div>
       </div>
 
-      {/* Right Interaction Section */}
-      <div className="w-full md:w-[40%] flex flex-col justify-center p-6 md:p-16 bg-brand-creme overflow-hidden">
-        <div className="max-w-md w-full mx-auto space-y-6 md:space-y-10">
-          
-          <div className="mb-4 md:mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-black uppercase text-brand-ink">Sign In</h2>
-            <p className="text-brand-ink font-bold opacity-80 text-sm">Enter your details to start work.</p>
+      {/* Right Section */}
+      <div className="w-full md:w-[45%] flex flex-col justify-center p-6 md:p-14 bg-white overflow-auto">
+        <div className="max-w-sm w-full mx-auto space-y-6">
+
+          <div>
+            <h2 className="text-2xl font-bold text-ink">Sign In</h2>
+            <p className="text-sm text-ink-secondary mt-1">Enter your credentials to start work.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6 md:space-y-10">
+          <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="bg-rose-50 border-l-4 border-rose-600 p-4 text-rose-700 text-sm font-bold animate-in slide-in-from-top-2">
+              <div className="bg-danger-light border-l-4 border-danger p-3 text-danger text-sm font-semibold">
                 {error}
               </div>
             )}
 
-            <div className="group relative">
-              <label className="block text-label text-accent-cobalt mb-1.5">Phone Number</label>
+            <div>
+              <label className="label-text mb-1.5 block">Phone Number</label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="input-minimal w-full py-2"
+                className="input-field"
                 placeholder="Enter 10-digit number"
                 required
               />
             </div>
 
-            <div className="group relative">
-              <label className="block text-label text-accent-cobalt mb-1.5">Password</label>
+            <div>
+              <label className="label-text mb-1.5 block">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input-minimal w-full py-2"
+                className="input-field"
                 placeholder="Enter your password"
                 required
               />
@@ -103,28 +96,25 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-capsule w-full group py-3 md:py-4"
+              className="btn-primary w-full py-3.5 text-sm"
             >
-              <span className="flex items-center justify-center gap-4">
-                {loading ? 'SIGNING IN...' : 'SIGN IN'}
-                {!loading && <span className="text-xl group-hover:translate-x-2 transition-transform">→</span>}
-              </span>
+              {loading ? 'Signing in...' : 'Sign In →'}
             </button>
           </form>
 
           {/* Quick Access */}
-          <div className="mt-8 md:mt-20 flex flex-col gap-4">
-            <p className="text-label text-brand-ink/80 font-black">Quick Sign In</p>
+          <div className="pt-4 border-t border-border">
+            <p className="label-text mb-3">Quick Login</p>
             <div className="flex gap-3">
               <button
                 onClick={() => quickLogin('9800000001', 'agent123')}
-                className="flex-1 py-3 px-4 bg-brand-clay border-2 border-brand-ink font-display font-black text-xs uppercase transition hover:bg-white hover:shadow-[4px_4px_0px_black] active:translate-y-[2px] rounded-2xl text-brand-ink"
+                className="flex-1 py-2.5 px-3 bg-surface border border-border rounded-lg text-xs font-bold text-ink hover:bg-surface-card"
               >
                 Agent 1
               </button>
               <button
                 onClick={() => quickLogin('9800000002', 'agent123')}
-                className="flex-1 py-3 px-4 bg-brand-clay border-2 border-brand-ink font-display font-black text-xs uppercase transition hover:bg-white hover:shadow-[4px_4px_0px_black] active:translate-y-[2px] rounded-2xl text-brand-ink"
+                className="flex-1 py-2.5 px-3 bg-surface border border-border rounded-lg text-xs font-bold text-ink hover:bg-surface-card"
               >
                 Agent 2
               </button>

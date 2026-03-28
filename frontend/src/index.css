@@ -1,78 +1,81 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Unbounded:wght@200..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-display: 'Syne', sans-serif;
-  --font-mono: 'Unbounded', monospace;
-  
-  --color-brand-creme: #fcfaf2;
-  --color-brand-clay: #f1f0e8;
-  --color-brand-ink: #0a0a0a;
-  
-  --color-primary-600: #1a44d6;
-  --color-primary-500: #2d5cf7;
-  --color-primary-400: #5c85ff;
-  
-  --color-accent-cobalt: #2d5cf7;
-  --color-accent-terracotta: #e27d60;
+  --font-sans: 'Inter', sans-serif;
 
-  --animate-float: float 8s ease-in-out infinite;
+  --color-primary: #1B4DFF;
+  --color-primary-light: #3B6FFF;
+  --color-primary-dark: #0F3AD4;
+
+  --color-success: #16A34A;
+  --color-success-light: #DCFCE7;
+
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+
+  --color-surface: #F8FAFC;
+  --color-surface-card: #FFFFFF;
+
+  --color-ink: #0F172A;
+  --color-ink-secondary: #475569;
+  --color-ink-muted: #94A3B8;
+
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
 }
 
 @layer base {
   body {
-    @apply bg-[#fcfaf2] text-[#0a0a0a] antialiased selection:bg-accent-cobalt selection:text-white font-sans;
-    /* Organic grain texture overlay */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    background-repeat: repeat;
-    background-blend-mode: soft-light;
+    @apply bg-surface text-ink antialiased font-sans;
   }
-  
-  h1, h2, h3 {
-    @apply font-display font-extrabold tracking-tight;
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
   }
 }
 
-@keyframes float {
-  0% { transform: translate(0px, 0px) rotate(0deg); }
-  33% { transform: translate(15px, -15px) rotate(2deg); }
-  66% { transform: translate(-10px, 10px) rotate(-1deg); }
-  100% { transform: translate(0px, 0px) rotate(0deg); }
+/* ── Utility Classes ────────────────────────────────────────── */
+
+.card {
+  @apply bg-surface-card border border-border rounded-xl p-5;
 }
 
-/* Organic Section - A carved surface look */
-.organic-panel {
-  @apply bg-[#fefefe]/40 backdrop-blur-3xl border-2 border-[#1a1a1a]/5 shadow-[8px_8px_0px_rgba(10,10,10,0.02)];
+.card-flat {
+  @apply bg-surface-card border border-border rounded-lg p-4;
 }
 
-/* Neo-Brutalist Card */
-.bento-tile {
-  @apply bg-[#fefefe] border-2 border-[#0a0a0a] shadow-[6px_6px_0px_#0a0a0a] transition-all duration-300 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_#0a0a0a];
+.btn-primary {
+  @apply px-6 py-3 bg-primary text-white font-semibold rounded-lg text-sm;
 }
 
-/* Pill UI Elements */
-.pill-shape {
-  @apply rounded-[100px] border-2 border-[#0a0a0a];
+.btn-primary:hover {
+  @apply bg-primary-dark;
 }
 
-/* Typography Headings */
-.text-hero {
-  @apply font-display font-[800] text-[clamp(2.5rem,8vw,5rem)] leading-[0.9] tracking-[-0.04em];
+.btn-primary:disabled {
+  @apply opacity-40 cursor-not-allowed;
 }
 
-/* High-Energy Action Button */
-.btn-capsule {
-  @apply px-8 py-4 bg-accent-cobalt text-white font-mono font-bold rounded-full border-2 border-black transition-all duration-300 hover:bg-white hover:text-black hover:shadow-[0_8px_20px_rgba(45,92,247,0.3)] shadow-[0_4px_0px_black] active:translate-y-[2px] active:shadow-none;
+.btn-outline {
+  @apply px-6 py-3 border-2 border-ink text-ink font-semibold rounded-lg text-sm;
 }
 
-/* Minimal Input */
-.input-minimal {
-  @apply w-full bg-transparent border-b-4 border-brand-ink py-4 px-2 font-display font-[900] text-3xl focus:outline-none focus:border-accent-cobalt transition-all placeholder:text-brand-ink/40 text-brand-ink;
+.btn-outline:hover {
+  @apply bg-ink text-white;
 }
 
-/* High-Contrast Label */
-.text-label {
-  @apply font-mono text-xs uppercase font-extrabold text-brand-ink tracking-widest;
+.input-field {
+  @apply w-full bg-surface border border-border-strong rounded-lg px-4 py-3 text-sm font-medium text-ink placeholder:text-ink-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary;
+}
+
+.label-text {
+  @apply text-xs font-bold uppercase tracking-wide text-ink-secondary;
+}
+
+.status-pill {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-bold;
 }

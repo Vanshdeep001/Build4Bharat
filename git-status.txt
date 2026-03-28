@@ -1,0 +1,160 @@
+On branch main
+Your branch and 'origin/main' have diverged,
+and have 1 and 7 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+All conflicts fixed but you are still merging.
+  (use "git commit" to conclude merge)
+
+Changes to be committed:
+	modified:   backend/.env
+	new file:   backend/__pycache__/config.cpython-314.pyc
+	new file:   backend/__pycache__/database.cpython-314.pyc
+	new file:   backend/__pycache__/main.cpython-314.pyc
+	modified:   backend/config.py
+	modified:   backend/main.py
+	new file:   backend/middleware/__pycache__/__init__.cpython-314.pyc
+	new file:   backend/middleware/__pycache__/auth_middleware.cpython-314.pyc
+	new file:   backend/models/__pycache__/__init__.cpython-314.pyc
+	new file:   backend/models/__pycache__/anomaly.cpython-314.pyc
+	new file:   backend/models/__pycache__/farmer.cpython-314.pyc
+	new file:   backend/models/__pycache__/fund_log.cpython-314.pyc
+	new file:   backend/models/__pycache__/user.cpython-314.pyc
+	new file:   backend/models/__pycache__/verification.cpython-314.pyc
+	modified:   backend/requirements.txt
+	new file:   backend/routes/__pycache__/__init__.cpython-314.pyc
+	new file:   backend/routes/__pycache__/anomalies.cpython-314.pyc
+	new file:   backend/routes/__pycache__/auth.cpython-314.pyc
+	new file:   backend/routes/__pycache__/dashboard.cpython-314.pyc
+	new file:   backend/routes/__pycache__/farmers.cpython-314.pyc
+	new file:   backend/routes/__pycache__/fund_logs.cpython-314.pyc
+	new file:   backend/routes/__pycache__/notifications.cpython-314.pyc
+	new file:   backend/routes/__pycache__/submissions.cpython-314.pyc
+	new file:   backend/routes/__pycache__/verifications.cpython-314.pyc
+	new file:   backend/services/__pycache__/__init__.cpython-314.pyc
+	new file:   backend/services/__pycache__/isolation_forest.cpython-314.pyc
+	new file:   backend/services/__pycache__/scheduler.cpython-314.pyc
+	new file:   backend/services/__pycache__/synthetic_data.cpython-314.pyc
+	new file:   bot/__pycache__/database.cpython-314.pyc
+	new file:   bot/__pycache__/logic.cpython-314.pyc
+	new file:   bot/app.py
+	new file:   bot/database.py
+	new file:   bot/logic.py
+	new file:   bot/requirements.txt
+	modified:   dm-dash/package-lock.json
+	modified:   dm-dash/package.json
+	modified:   dm-dash/src/App.jsx
+	new file:   dm-dash/src/components/AdvanceAnalyticsGraphs.jsx
+	new file:   dm-dash/src/components/DistrictBlockMap.jsx
+	modified:   dm-dash/src/components/UttarakhandMap.jsx
+	modified:   dm-dash/src/layout/SovereignLayout.jsx
+	new file:   dm-dash/src/pages/AdvanceAnalyticsPage.jsx
+	modified:   frontend/dev-dist/sw.js
+	modified:   frontend/package-lock.json
+	modified:   frontend/package.json
+	modified:   frontend/src/utils/api.js
+	modified:   frontend/src/utils/socket.js
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .gitignore
+	modified:   README.md
+	modified:   backend/.env
+	modified:   backend/__pycache__/config.cpython-311.pyc
+	modified:   backend/__pycache__/main.cpython-311.pyc
+	modified:   backend/config.py
+	modified:   backend/database.py
+	modified:   backend/main.py
+	modified:   backend/middleware/auth_middleware.py
+	modified:   backend/models/__init__.py
+	modified:   backend/models/anomaly.py
+	modified:   backend/models/farmer.py
+	modified:   backend/models/fund_log.py
+	modified:   backend/models/notification.py
+	modified:   backend/models/submission.py
+	modified:   backend/models/user.py
+	modified:   backend/models/verification.py
+	modified:   backend/requirements.txt
+	modified:   backend/routes/__init__.py
+	modified:   backend/routes/anomalies.py
+	modified:   backend/routes/auth.py
+	modified:   backend/routes/dashboard.py
+	modified:   backend/routes/farmers.py
+	modified:   backend/routes/fund_logs.py
+	modified:   backend/routes/notifications.py
+	modified:   backend/routes/submissions.py
+	modified:   backend/routes/verifications.py
+	modified:   backend/seed/seed_data.py
+	modified:   backend/services/__init__.py
+	modified:   backend/services/anomaly_engine.py
+	modified:   backend/services/isolation_forest.py
+	modified:   backend/services/openai_service.py
+	modified:   backend/services/photo_service.py
+	modified:   backend/services/scheduler.py
+	modified:   backend/services/synthetic_data.py
+	modified:   bot/app.py
+	modified:   bot/database.py
+	modified:   bot/logic.py
+	modified:   bot/requirements.txt
+	modified:   dm-dash/README.md
+	modified:   dm-dash/eslint.config.js
+	modified:   dm-dash/index.html
+	modified:   dm-dash/package-lock.json
+	modified:   dm-dash/package.json
+	modified:   dm-dash/postcss.config.js
+	modified:   dm-dash/public/icons.svg
+	modified:   dm-dash/src/App.css
+	modified:   dm-dash/src/App.jsx
+	modified:   dm-dash/src/assets/vite.svg
+	modified:   dm-dash/src/components/AdvanceAnalyticsGraphs.jsx
+	modified:   dm-dash/src/components/DistrictBlockMap.jsx
+	modified:   dm-dash/src/components/Navbar.jsx
+	modified:   dm-dash/src/components/SearchDialog.jsx
+	modified:   dm-dash/src/data/district_data.csv
+	modified:   dm-dash/src/index.css
+	modified:   dm-dash/src/layout/SovereignLayout.jsx
+	modified:   dm-dash/src/main.jsx
+	modified:   dm-dash/src/pages/AdvanceAnalyticsPage.jsx
+	modified:   dm-dash/src/pages/SchemeConvergencePage.jsx
+	modified:   dm-dash/tailwind.config.js
+	modified:   field-dash/index.html
+	modified:   field-dash/package-lock.json
+	modified:   field-dash/package.json
+	modified:   field-dash/src/App.jsx
+	modified:   field-dash/src/fieldDash/FieldDashRawHtmlPage.jsx
+	modified:   field-dash/src/fieldDash/extractBodyInner.js
+	modified:   field-dash/src/fieldDash/fieldDashRoutes.js
+	modified:   field-dash/src/fieldDash/prepareFieldDashHtml.js
+	modified:   field-dash/src/fieldDashHtml/data_sync_manager_desktop/code.html
+	modified:   field-dash/src/fieldDashHtml/farmer_registry_desktop/code.html
+	modified:   field-dash/src/fieldDashHtml/field_tasks_desktop/code.html
+	modified:   field-dash/src/fieldDashHtml/officer_profile_desktop/code.html
+	modified:   field-dash/src/fieldDashHtml/submit_field_report_desktop/code.html
+	modified:   field-dash/src/index.css
+	modified:   field-dash/src/main.jsx
+	modified:   field-dash/src/pages/FieldDashDataSyncDesktop.jsx
+	modified:   field-dash/src/pages/FieldDashFarmerRegistryDesktop.jsx
+	modified:   field-dash/src/pages/FieldDashFieldTasksDesktop.jsx
+	modified:   field-dash/src/pages/FieldDashOfficerProfileDesktop.jsx
+	modified:   field-dash/src/pages/FieldDashSubmitFieldReportDesktop.jsx
+	modified:   field-dash/vite.config.js
+	modified:   frontend/dev-dist/sw.js
+	modified:   frontend/eslint.config.js
+	modified:   frontend/package-lock.json
+	modified:   frontend/package.json
+	modified:   frontend/public/icons.svg
+	modified:   frontend/src/App.css
+	modified:   frontend/src/assets/vite.svg
+	modified:   frontend/src/components/Navbar.jsx
+	modified:   frontend/src/index.css
+	modified:   frontend/src/pages/FarmerVerification.jsx
+	modified:   frontend/src/pages/FieldAgentDashboard.jsx
+	modified:   frontend/src/pages/Login.jsx
+	modified:   frontend/src/pages/SubmissionForm.jsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	git-log.txt
+	git-status.txt
+

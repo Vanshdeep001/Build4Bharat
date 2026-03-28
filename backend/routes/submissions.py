@@ -24,6 +24,9 @@ async def create_submission(
     kpi_type: Optional[str] = Form(None),
     notes: Optional[str] = Form(None),
     farmer_id: Optional[str] = Form(None),
+    farmer_name: Optional[str] = Form(None),
+    work_description: Optional[str] = Form(None),
+    task_status: Optional[str] = Form(None),
     photo: Optional[UploadFile] = File(None),
     current_user: dict = Depends(require_role("field_agent", "district_admin", "state_admin")),
 ):
@@ -59,6 +62,7 @@ async def create_submission(
     submission_doc = {
         "agent_id": agent_id,
         "farmer_id": farmer_id,
+        "farmer_name": farmer_name,
         "district_id": district_id,
         "block_id": block_id,
         "village": village,
@@ -66,6 +70,8 @@ async def create_submission(
         "completion_percentage": completion_percentage,
         "beneficiary_count": beneficiary_count,
         "materials_used": {},
+        "work_description": work_description,
+        "task_status": task_status,
         "photo_url": photo_url,
         "photo_gps": photo_gps,
         "project_gps": project_gps,

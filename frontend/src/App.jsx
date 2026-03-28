@@ -3,7 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { OfflineSyncProvider } from './utils/OfflineSyncContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 // Pages
@@ -34,18 +34,30 @@ export default function App() {
     <Router>
       <AuthProvider>
         <OfflineSyncProvider>
-          <div className="min-h-screen bg-surface text-slate-200">
-            {/* PWA Prompts */}
+          <div className="min-h-screen bg-surface text-ink">
+            {/* PWA Update Prompt */}
             {(offlineReady || needRefresh) && (
-              <div className="fixed bottom-4 right-4 z-50 bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-2xl animate-in slide-in-from-bottom-5">
-                <div className="mb-2 text-sm text-slate-200">
+              <div className="fixed bottom-4 right-4 z-50 bg-ink text-white p-4 rounded-lg shadow-lg border border-border">
+                <div className="mb-2 text-sm">
                   {offlineReady
                     ? <span>App ready to work offline</span>
-                    : <span>New content available, click on reload button to update.</span>}
+                    : <span>New content available, click reload to update.</span>}
                 </div>
                 <div className="flex gap-2">
-                  {needRefresh && <button className="bg-primary-500 hover:bg-primary-600 px-3 py-1.5 rounded-lg text-xs font-bold" onClick={() => updateServiceWorker(true)}>Reload</button>}
-                  <button className="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold" onClick={closeUpdatePrompt}>Close</button>
+                  {needRefresh && (
+                    <button
+                      className="bg-primary px-3 py-1.5 rounded text-xs font-bold"
+                      onClick={() => updateServiceWorker(true)}
+                    >
+                      Reload
+                    </button>
+                  )}
+                  <button
+                    className="bg-ink-secondary px-3 py-1.5 rounded text-xs font-bold"
+                    onClick={closeUpdatePrompt}
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             )}
@@ -55,7 +67,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
 
-              {/* Protected Routes - Field Agent Only */}
+              {/* Protected Routes - Field Agent */}
               <Route
                 path="/field"
                 element={
@@ -74,8 +86,17 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/submit/:farmerId"
+                element={
+                  <ProtectedRoute allowedRoles={['field_agent']}>
+                    <Navbar />
+                    <SubmissionForm />
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* Fallback routing */}
+              {/* Fallback */}
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </div>
