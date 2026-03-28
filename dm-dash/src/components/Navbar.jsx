@@ -1,16 +1,61 @@
 import React, { useState } from "react";
 import SearchDialog from "./SearchDialog";
-import profileImg from "../assets/profile.jpeg";
+import profileImg from "../assets/image.png";
 export function Navbar({ selectedDistrict, onDistrictChange }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const notifications = [
-    { id: 1, bdoName: "Rajesh Kumar", block: "Haldwani", message: "requested for fund release", type: "payment", icon: "payments", time: "2h ago", unread: true },
-    { id: 2, bdoName: "Sneha Kapur", block: "Bhimtal", message: "uploaded infrastructure update", type: "update", icon: "construction", time: "5h ago", unread: true },
-    { id: 3, bdoName: "Amit Singh", block: "Ramnagar", message: "submitted site inspection report", type: "report", icon: "visibility", time: "1d ago", unread: false },
-    { id: 4, bdoName: "Priya Devi", block: "Lalkuan", message: "reported emergency alert", type: "alert", icon: "warning", time: "2d ago", unread: false },
-    { id: 5, bdoName: "Vikram Negi", block: "Kaladhungi", message: "submitted monthly progress report", type: "report", icon: "analytics", time: "3d ago", unread: false },
+    {
+      id: 1,
+      bdoName: "Rajesh Kumar",
+      block: "Haldwani",
+      message: "requested for fund release",
+      type: "payment",
+      icon: "payments",
+      time: "2h ago",
+      unread: true,
+    },
+    {
+      id: 2,
+      bdoName: "Sneha Kapur",
+      block: "Bhimtal",
+      message: "uploaded infrastructure update",
+      type: "update",
+      icon: "construction",
+      time: "5h ago",
+      unread: true,
+    },
+    {
+      id: 3,
+      bdoName: "Amit Singh",
+      block: "Ramnagar",
+      message: "submitted site inspection report",
+      type: "report",
+      icon: "visibility",
+      time: "1d ago",
+      unread: false,
+    },
+    {
+      id: 4,
+      bdoName: "Priya Devi",
+      block: "Lalkuan",
+      message: "reported emergency alert",
+      type: "alert",
+      icon: "warning",
+      time: "2d ago",
+      unread: false,
+    },
+    {
+      id: 5,
+      bdoName: "Vikram Negi",
+      block: "Kaladhungi",
+      message: "submitted monthly progress report",
+      type: "report",
+      icon: "analytics",
+      time: "3d ago",
+      unread: false,
+    },
   ];
 
   return (
@@ -54,11 +99,11 @@ export function Navbar({ selectedDistrict, onDistrictChange }) {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className={`relative p-2.5 rounded-xl transition-all group ${
-                  isNotificationsOpen 
-                    ? "bg-primary/10 text-primary shadow-inner" 
+                  isNotificationsOpen
+                    ? "bg-primary/10 text-primary shadow-inner"
                     : "hover:bg-surface-container-high text-on-surface-variant hover:text-primary"
                 }`}
               >
@@ -69,32 +114,47 @@ export function Navbar({ selectedDistrict, onDistrictChange }) {
               {isNotificationsOpen && (
                 <div className="absolute right-0 mt-3 w-80 bg-surface border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="p-4 border-b border-outline-variant/20 bg-surface-container-low/50 flex items-center justify-between">
-                    <h3 className="font-headline font-bold text-on-surface">Notifications</h3>
+                    <h3 className="font-headline font-bold text-on-surface">
+                      Notifications
+                    </h3>
                     <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      {notifications.filter(n => n.unread).length} New
+                      {notifications.filter((n) => n.unread).length} New
                     </span>
                   </div>
                   <div className="max-h-[400px] overflow-y-auto">
                     {notifications.map((notification) => (
-                      <div 
+                      <div
                         key={notification.id}
                         className={`p-4 border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors cursor-pointer group/item ${
                           notification.unread ? "bg-primary/[0.02]" : ""
                         }`}
                       >
                         <div className="flex gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                            notification.unread ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"
-                          }`}>
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                              notification.unread
+                                ? "bg-primary/10 text-primary"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
                             <span className="material-symbols-outlined text-lg">
                               {notification.icon}
                             </span>
                           </div>
                           <div className="flex-1">
                             <p className="text-sm text-on-surface leading-snug">
-                              <span className="font-bold">{notification.bdoName}</span> from <span className="font-bold text-primary">{notification.block}</span> {notification.message}
+                              <span className="font-bold">
+                                {notification.bdoName}
+                              </span>{" "}
+                              from{" "}
+                              <span className="font-bold text-primary">
+                                {notification.block}
+                              </span>{" "}
+                              {notification.message}
                             </p>
-                            <p className="text-[10px] text-on-surface-variant/60 mt-1 font-medium">{notification.time}</p>
+                            <p className="text-[10px] text-on-surface-variant/60 mt-1 font-medium">
+                              {notification.time}
+                            </p>
                           </div>
                           {notification.unread && (
                             <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5"></div>
@@ -125,7 +185,7 @@ export function Navbar({ selectedDistrict, onDistrictChange }) {
                 Veer Vikram Singh
               </p>
               <p className="text-[10px] text-on-surface-variant font-medium">
-                District Magistrate
+                State
               </p>
             </div>
             <div className="relative">
