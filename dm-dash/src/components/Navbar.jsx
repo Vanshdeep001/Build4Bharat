@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import SearchDialog from "./SearchDialog";
 import profileImg from "../assets/image.png";
-export function Navbar({ selectedDistrict, onDistrictChange }) {
+export function Navbar({ selectedDistrict, onDistrictChange, hideSearch = false }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -77,22 +77,24 @@ export function Navbar({ selectedDistrict, onDistrictChange }) {
 
         {/* Center: Search Trigger */}
         <div className="flex-1 max-w-2xl px-12">
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="w-full flex items-center gap-3 bg-surface-container-low border border-outline-variant/50 rounded-full px-5 py-2.5 group hover:border-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xl text-on-surface-variant group-hover:text-primary transition-colors">
-              search
-            </span>
-            <span className="text-sm font-medium text-on-surface-variant/50 flex-1 text-left">
-              Search districts...
-            </span>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-bold text-on-surface-variant/40 bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant/20 tracking-tighter uppercase">
-                ⌘ K
+          {!hideSearch && (
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="w-full flex items-center gap-3 bg-surface-container-low border border-outline-variant/50 rounded-full px-5 py-2.5 group hover:border-primary transition-all shadow-sm hover:shadow-md cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xl text-on-surface-variant group-hover:text-primary transition-colors">
+                search
               </span>
-            </div>
-          </button>
+              <span className="text-sm font-medium text-on-surface-variant/50 flex-1 text-left">
+                Search districts...
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold text-on-surface-variant/40 bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant/20 tracking-tighter uppercase">
+                  ⌘ K
+                </span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Right: Actions & Profile */}

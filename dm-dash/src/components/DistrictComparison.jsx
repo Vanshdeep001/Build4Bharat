@@ -1,46 +1,5 @@
-import React, { useState } from 'react';
-
-// Enhanced dummy data for districts
-const districtData = {
-  "Dehradun": {
-    score: 88, status: "On-Track", color: "text-green-500", bg: "bg-green-500/10",
-    allocated: 450, utilized: 410, utilizationRate: 91.1, beneficiaries: 125000,
-    anomalies: 35, grievancesResolved: 94.5, activeBlocks: 6, totalBlocks: 6,
-    topCrops: ["Wheat", "Sugarcane", "Maize"]
-  },
-  "Haridwar": {
-    score: 76, status: "At Risk", color: "text-amber-500", bg: "bg-amber-500/10",
-    allocated: 380, utilized: 290, utilizationRate: 76.3, beneficiaries: 145000,
-    anomalies: 82, grievancesResolved: 82.1, activeBlocks: 5, totalBlocks: 6,
-    topCrops: ["Wheat", "Sugarcane", "Rice"]
-  },
-  "Nainital": {
-    score: 92, status: "On-Track", color: "text-green-500", bg: "bg-green-500/10",
-    allocated: 320, utilized: 295, utilizationRate: 92.1, beneficiaries: 85000,
-    anomalies: 12, grievancesResolved: 97.2, activeBlocks: 8, totalBlocks: 8,
-    topCrops: ["Apples", "Wheat", "Soyabean"]
-  },
-  "Udham Singh Nagar": {
-    score: 85, status: "On-Track", color: "text-green-500", bg: "bg-green-500/10",
-    allocated: 520, utilized: 468, utilizationRate: 90.0, beneficiaries: 180000,
-    anomalies: 45, grievancesResolved: 91.0, activeBlocks: 7, totalBlocks: 7,
-    topCrops: ["Rice", "Wheat", "Sugarcane"]
-  },
-  "Pauri Garhwal": {
-    score: 64, status: "At Risk", color: "text-amber-500", bg: "bg-amber-500/10",
-    allocated: 210, utilized: 145, utilizationRate: 69.0, beneficiaries: 65000,
-    anomalies: 110, grievancesResolved: 78.4, activeBlocks: 11, totalBlocks: 15,
-    topCrops: ["Wheat", "Millet", "Mustard"]
-  },
-  "Almora": {
-    score: 45, status: "Critical", color: "text-error", bg: "bg-error/10",
-    allocated: 180, utilized: 80, utilizationRate: 44.4, beneficiaries: 50000,
-    anomalies: 140, grievancesResolved: 62.0, activeBlocks: 6, totalBlocks: 11,
-    topCrops: ["Wheat", "Soyabean", "Vegetables"]
-  }
-};
-
-const districts = Object.keys(districtData);
+import React, { useState, useEffect } from 'react';
+import { fetchAdvanceAnalytics } from '../api';
 
 const ComparisonCard = ({ title, value1, value2, formatter = (v) => v, reverseGood = false }) => {
   const v1 = parseFloat(value1) || 0;
@@ -78,11 +37,36 @@ const ComparisonCard = ({ title, value1, value2, formatter = (v) => v, reverseGo
 };
 
 export default function DistrictComparison() {
+  const [districtsObj, setDistrictsObj] = useState(null);
   const [dist1, setDist1] = useState("Dehradun");
-  const [dist2, setDist2] = useState("Haridwar");
+  const [dist2, setDist2] = useState("Chamoli"); // Updated default to something that exists broadly
 
-  const data1 = districtData[dist1];
-  const data2 = districtData[dist2];
+  useEffect(() => {
+    let active = true;
+    fetchAdvanceAnalytics().then(res => {
+      if (active && res && res.district_comparison) {
+        setDistrictsObj(res.district_comparison);
+        
+        // Ensure defaults are valid keys from the response
+        const keys = Object.keys(res.district_comparison);
+        if (keys.length >= 2) {
+          if (!keys.includes(dist1)) setDist1(keys[0]);
+          if (!keys.includes(dist2)) setDist2(keys[1]);
+        }
+      }
+    }).catch(console.error);
+
+    return () => { active = false; };
+  }, [dist1, dist2]);
+
+  if (!districtsObj) {
+    return <div className="p-8 text-center text-on-surface-variant font-bold opacity-50 animate-pulse mt-10">Syncing Intelligence...</div>;
+  }
+
+  const districtsList = Object.keys(districtsObj);
+
+  const data1 = districtsObj[dist1];
+  const data2 = districtsObj[dist2];
 
   return (
     <div className="p-0 space-y-8 animate-in fade-in duration-700 mt-10">
@@ -117,7 +101,7 @@ export default function DistrictComparison() {
               onChange={(e) => setDist1(e.target.value)}
               className="w-full max-w-[250px] bg-surface border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer shadow-sm hover:border-primary/50 transition-colors"
             >
-              {districts.map(s => (
+              {districtsList.map(s => (
                 <option key={`d1-${s}`} value={s} disabled={s === dist2}>{s}</option>
               ))}
             </select>
@@ -130,7 +114,7 @@ export default function DistrictComparison() {
               onChange={(e) => setDist2(e.target.value)}
               className="w-full max-w-[250px] bg-surface border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-indigo-500 focus:border-transparent cursor-pointer shadow-sm hover:border-indigo-500/50 transition-colors"
             >
-              {districts.map(s => (
+              {districtsList.map(s => (
                 <option key={`d2-${s}`} value={s} disabled={s === dist1}>{s}</option>
               ))}
             </select>
@@ -140,7 +124,7 @@ export default function DistrictComparison() {
         {/* Top Level Score Cards */}
         <div className="grid grid-cols-2 divide-x divide-outline-variant/10 border-b border-outline-variant/10">
           <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-transparent to-surface-container-high/20">
-            <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4 ${data1.bg} ${data1.color}`}>
+            <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4 ${data1?.bg || ''} ${data1?.color || ''}`}>
               {data1.status}
             </div>
             <div className="flex items-baseline gap-1">
@@ -151,7 +135,7 @@ export default function DistrictComparison() {
           </div>
 
           <div className="p-8 flex flex-col items-center justify-center bg-gradient-to-br from-transparent to-surface-container-high/20">
-             <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4 ${data2.bg} ${data2.color}`}>
+             <div className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4 ${data2?.bg || ''} ${data2?.color || ''}`}>
               {data2.status}
             </div>
             <div className="flex items-baseline gap-1">
@@ -225,7 +209,7 @@ export default function DistrictComparison() {
           {/* Special formatting for text arrays */}
           <div className="grid grid-cols-3 gap-4 py-6 border-b border-outline-variant/10 items-start px-4">
             <div className="flex flex-wrap justify-center gap-2">
-              {data1.topCrops.map(c => (
+              {(data1?.topCrops || []).map(c => (
                 <span key={`1-${c}`} className="text-[10px] font-bold bg-surface-container px-2 py-1 rounded-md text-on-surface-variant">{c}</span>
               ))}
             </div>
@@ -233,7 +217,7 @@ export default function DistrictComparison() {
               <span className="text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-widest">Major Output Crops</span>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
-              {data2.topCrops.map(c => (
+              {(data2?.topCrops || []).map(c => (
                 <span key={`2-${c}`} className="text-[10px] font-bold bg-surface-container px-2 py-1 rounded-md text-on-surface-variant">{c}</span>
               ))}
             </div>

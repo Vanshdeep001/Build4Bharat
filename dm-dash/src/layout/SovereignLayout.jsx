@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 const navLinkBase =
   "flex items-center gap-3 px-4 py-3 mx-2 transition-all rounded-lg";
 
-function SideNav() {
+function SideNav({ onLogout }) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-50 bg-[#00113a] dark:bg-[#00081a] shadow-[8px_0_24px_-4px_rgba(26,28,28,0.06)] flex flex-col py-6 gap-2">
       <div className="px-6 mb-8 invisible">
@@ -28,7 +29,7 @@ function SideNav() {
 
       <nav className="flex-1 flex flex-col gap-1">
         <NavLink
-          to="/"
+          to="/dm"
           end
           className={({ isActive }) =>
             isActive
@@ -43,7 +44,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/block-status"
+          to="/dm/block-status"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -57,7 +58,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/scheme-convergence"
+          to="/dm/scheme-convergence"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -71,7 +72,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/grievances"
+          to="/dm/grievances"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -85,7 +86,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/advance-analytics"
+          to="/dm/advance-analytics"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -99,7 +100,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/admin-actions"
+          to="/dm/admin-actions"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -111,7 +112,7 @@ function SideNav() {
         </NavLink>
 
         <NavLink
-          to="/ai-anomalies"
+          to="/dm/ai-anomalies"
           className={({ isActive }) =>
             isActive
               ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
@@ -134,15 +135,14 @@ function SideNav() {
 
       <div className="border-t border-white/10 pt-4 flex flex-col gap-1">
         <a
-          className="flex items-center gap-3 text-[#758dd5] hover:text-white px-4 py-3 mx-2 transition-all"
-          href="#"
+          className="flex items-center gap-3 text-[#758dd5] hover:text-white px-4 py-3 mx-2 transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">help</span>
           <span className="font-body font-medium text-[0.875rem]">Support</span>
         </a>
         <a
-          className="flex items-center gap-3 text-[#758dd5] hover:text-white px-4 py-3 mx-2 transition-all"
-          href="#"
+          className="flex items-center gap-3 text-[#758dd5] hover:text-white px-4 py-3 mx-2 transition-all cursor-pointer"
+          onClick={onLogout}
         >
           <span className="material-symbols-outlined">logout</span>
           <span className="font-body font-medium text-[0.875rem]">
@@ -156,10 +156,18 @@ function SideNav() {
 
 export function SovereignLayout() {
   const [selectedDistrict, setSelectedDistrict] = useState("Uttarakhand");
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = (e) => {
+    if (e) e.preventDefault();
+    logout();
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-surface">
-      <SideNav />
+      <SideNav onLogout={handleLogout} />
       <main className="ml-64 min-h-screen">
         <Navbar
           selectedDistrict={selectedDistrict}

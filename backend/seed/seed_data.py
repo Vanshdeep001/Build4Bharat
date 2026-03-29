@@ -18,11 +18,17 @@ random.seed(42)
 # ── Constants ──────────────────────────────────────────────────────
 
 DISTRICTS = [
+    {"district_id": "dehradun", "name": "Dehradun"},
     {"district_id": "uttarkashi", "name": "Uttarkashi"},
     {"district_id": "chamoli", "name": "Chamoli"},
 ]
 
 BLOCKS = {
+    "dehradun": [
+        {"block_id": "dehradun", "name": "Dehradun Block"},
+        {"block_id": "vikasnagar", "name": "Vikasnagar"},
+        {"block_id": "doiwala", "name": "Doiwala"},
+    ],
     "uttarkashi": [
         {"block_id": "dunda", "name": "Dunda"},
         {"block_id": "bhatwari", "name": "Bhatwari"},
@@ -36,6 +42,9 @@ BLOCKS = {
 }
 
 VILLAGES = {
+    "dehradun": ["Dharampur", "Raipur", "Majra", "Clement Town"],
+    "vikasnagar": ["Selakui", "Herbertpur", "Langha", "Sahaspur"],
+    "doiwala": ["Jolly Grant", "Bhowala", "Markham Grant", "Rishikesh"],
     "dunda": ["Raithal", "Dyara", "Barsu", "Gangotri"],
     "bhatwari": ["Harsil", "Sukhi", "Jhala", "Dharali"],
     "purola": ["Naugaon", "Mori", "Jarmola", "Barkot"],
@@ -90,7 +99,7 @@ async def seed():
 
     # Clear existing data
     collections = [
-        "users", "farmers", "submissions", "fund_logs",
+        "users", "field_agents", "farmers", "submissions", "fund_logs",
         "farmer_verifications", "anomalies", "notifications", "districts", "blocks",
     ]
     for col in collections:
@@ -110,6 +119,8 @@ async def seed():
                 "_id": b["block_id"],
                 "name": b["name"],
                 "district_id": district_id,
+                "frozen_status": "active",
+                "frozen_reason": "",
             })
     print("✅ Districts & blocks seeded")
 
@@ -123,17 +134,46 @@ async def seed():
             for i in range(2):
                 phone = str(agent_phone_counter)
                 agent_phone_counter += 1
-                user_doc = {
+                agent_doc = {
                     "name": random_name(),
                     "phone": phone,
                     "password_hash": hash_password("agent123"),
                     "role": "field_agent",
                     "district_id": district_id,
                     "block_id": block["block_id"],
+                    "assigned_tasks": random.randint(10, 30),
+                    "completed_tasks": random.randint(5, 15),
+                    "pending_tasks": 0,
+                    "missed_tasks": random.randint(0, 5),
+                    "last_active": datetime.now(timezone.utc),
                     "created_at": datetime.now(timezone.utc),
                 }
-                result = await db.users.insert_one(user_doc)
-                users_created.append({**user_doc, "_id": result.inserted_id})
+
+                # Special case: Pooja Bisht for Dehradun block
+                if district_id == "dehradun" and block["block_id"] == "dehradun" and i == 0:
+                    agent_doc["name"] = "Pooja Bisht"
+                    # Keep phone as 9800000001 (from counter) so Quick Login Agent 1 works
+                    agent_doc["assigned_tasks"] = 10
+                    agent_doc["completed_tasks"] = 9
+                    agent_doc["pending_tasks"] = 1
+                    agent_doc["missed_tasks"] = 0
+                else:
+                    agent_doc["pending_tasks"] = max(0, agent_doc["assigned_tasks"] - agent_doc["completed_tasks"])
+                
+                # Insert to field_agents specifically
+                result = await db.field_agents.insert_one(agent_doc)
+                
+                # Store Pooja Bisht ID for linking later
+                if agent_doc["name"] == "Pooja Bisht":
+                    pooja_bisht_id = str(result.inserted_id)
+                
+                # Add to python array for linking submissions later
+                users_created.append({**agent_doc, "_id": result.inserted_id})
+                
+                # Also insert duplicate to users for backwards compatibility
+                duplicate_doc = agent_doc.copy()
+                del duplicate_doc["_id"]
+                await db.users.insert_one(duplicate_doc)
 
     # District admins: 1 per district = 2
     for i, d in enumerate(DISTRICTS):
@@ -199,6 +239,9 @@ async def seed():
 
     # Base GPS coords for blocks (approximate Uttarakhand locations)
     BLOCK_GPS = {
+        "dehradun": (30.31, 78.03),
+        "vikasnagar": (30.38, 77.80),
+        "doiwala": (30.15, 78.12),
         "dunda": (30.75, 78.45),
         "bhatwari": (30.80, 78.60),
         "purola": (30.90, 78.10),
@@ -213,8 +256,44 @@ async def seed():
             bid = block["block_id"]
             submission_ids[bid] = []
             base_lat, base_lng = BLOCK_GPS.get(bid, (30.5, 79.0))
+            # Link farmers to agents
             block_agents = agents_by_block.get(bid, ["unknown"])
             block_farmers = farmer_ids.get(bid, [])
+
+            # Special logic for Pooja Bisht submissions
+            # pooja_bisht_id is defined in the previous loop if she was created
+            if bid == "dehradun" and "pooja_bisht_id" in locals():
+                # Create 9 submissions for Pooja Bisht
+                for k in range(9):
+                    farmer_id = block_farmers[k % len(block_farmers)]
+                    submission_doc = {
+                        "agent_id": pooja_bisht_id,
+                        "farmer_id": farmer_id,
+                        "district_id": "dehradun",
+                        "block_id": "dehradun",
+                        "village": VILLAGES.get("dehradun")[k % len(VILLAGES.get("dehradun"))],
+                        "activity_type": "seed_distribution",
+                        "completion_percentage": 100.0,
+                        "beneficiary_count": 1,
+                        "materials_used": {"seeds_kg": str(random.randint(50, 200))},
+                        "photo_gps": {"lat": base_lat + random.uniform(-0.001, 0.001), "lng": base_lng + random.uniform(-0.001, 0.001)},
+                        "project_gps": {"lat": base_lat, "lng": base_lng},
+                        "location_match": True,
+                        "location_distance_km": round(random.uniform(0.1, 0.5), 2),
+                        "submission_hash": f"hash_{k}",
+                        "kpi_value": random.uniform(10, 50),
+                        "kpi_type": "quintals_distributed",
+                        "notes": "Seeded completion for Pooja Bisht",
+                        "created_at": datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 24)),
+                        "status": "completed",
+                        "is_anomaly": False,
+                        "anomaly_score": 0
+                    }
+                    await db.submissions.insert_one(submission_doc)
+                
+                # The 10th farmer remains pending (no submission)
+                # We skip the rest of the random generation for THIS block to keep it clean
+                continue
 
             for k in range(5):
                 activity = ACTIVITY_TYPES[k % len(ACTIVITY_TYPES)]
@@ -379,7 +458,9 @@ async def seed():
             "district_id": "uttarkashi",
             "block_id": "dunda",
             "anomaly_type": "high_dispute_rate",
+            "severity": "high",
             "anomaly_score": 82,
+            "description": "67% farmer disputes detected — benefits not reaching beneficiaries in Dunda block",
             "explanation": (
                 "In Dunda (Uttarkashi), 67% of farmer verifications report that benefits were not received, "
                 "which far exceeds the 15% threshold and signals serious ground-level discrepancies in scheme delivery. "
@@ -394,7 +475,9 @@ async def seed():
             "district_id": "uttarkashi",
             "block_id": "bhatwari",
             "anomaly_type": "fund_ahead_of_progress",
+            "severity": "high",
             "anomaly_score": 74,
+            "description": "Fund utilisation at 94% but physical progress only 35% — suspected fund misuse",
             "explanation": (
                 "In Bhatwari (Uttarkashi), fund utilisation stands at 94% while physical progress is only at 35%, "
                 "creating a 59-percentage-point gap that strongly suggests funds are being released without "
@@ -410,7 +493,9 @@ async def seed():
             "district_id": "chamoli",
             "block_id": "joshimath",
             "anomaly_type": "cost_outlier",
+            "severity": "medium",
             "anomaly_score": 68,
+            "description": "Cost per beneficiary ₹6,200 vs district average ₹2,800 — vendor overcharging suspected",
             "explanation": (
                 "In Joshimath (Chamoli), the cost per beneficiary is ₹6,200, which is significantly higher "
                 "than the district average of ₹2,800, indicating possible vendor overcharging or inflated "
@@ -422,11 +507,57 @@ async def seed():
             "status": "open",
             "created_at": datetime.now(timezone.utc) - timedelta(days=1),
         },
+        # ── Dehradun Block — Severe Anomalies (Real service deployed) ──
+        {
+            "district_id": "dehradun",
+            "block_id": "dehradun",
+            "anomaly_type": "gps_location_fraud",
+            "severity": "high",
+            "anomaly_score": 91,
+            "description": "Multiple GPS coordinate spoofing patterns detected in Dehradun block — field visits fabricated",
+            "explanation": (
+                "In Dehradun Block (Dehradun), AI analysis of field submission GPS coordinates has detected "
+                "a cluster of 6 submissions where photo GPS coordinates were spoofed from a single location "
+                "(Block Office) while project sites are spread across 4 villages. This indicates systematic "
+                "fabrication of field visits. Cross-referencing with beneficiary QR scans shows 3 farmers "
+                "have denied receiving benefits. Immediate action: Freeze fund disbursements for Dehradun block, "
+                "suspend implicated field agents, and deploy independent verification team."
+            ),
+            "suggested_action": "Freeze all fund disbursements and suspend implicated agents immediately",
+            "status": "open",
+            "created_at": datetime.now(timezone.utc) - timedelta(hours=6),
+        },
+        {
+            "district_id": "dehradun",
+            "block_id": "dehradun",
+            "anomaly_type": "submission_velocity_anomaly",
+            "severity": "high",
+            "anomaly_score": 87,
+            "description": "Abnormal submission velocity — 9 reports filed in 2 hours from agent in Dehradun block",
+            "explanation": (
+                "Agent in Dehradun Block submitted 9 verification reports within a 2-hour window covering "
+                "4 different villages. Physical travel time between these villages is minimum 45 minutes each way. "
+                "This velocity pattern is physically impossible and indicates bulk fabrication of field reports. "
+                "The AI pipeline flags this as a Tier-1 integrity violation. Recommended: Block further "
+                "assignments to this agent and initiate departmental inquiry."
+            ),
+            "suggested_action": "Block agent assignments and initiate departmental inquiry",
+            "status": "open",
+            "created_at": datetime.now(timezone.utc) - timedelta(hours=3),
+        },
     ]
 
     for anomaly in anomalies:
         await db.anomalies.insert_one(anomaly)
-    print("✅ 3 pre-built anomalies seeded")
+    print("✅ 5 pre-built anomalies seeded (including 2 severe for Dehradun block)")
+
+    # ── Block frozen_status (default: active) ──
+    # Dehradun block starts as frozen since it has severe anomalies
+    await db.blocks.update_one(
+        {"_id": "dehradun"},
+        {"$set": {"frozen_status": "frozen", "frozen_at": datetime.now(timezone.utc), "frozen_reason": "Multiple severe AI anomalies detected — GPS fraud and submission velocity violation"}}
+    )
+    print("✅ Dehradun block marked as FROZEN")
 
     # ── Notifications ──────────────────────────────────────────
     notifications = [
@@ -457,6 +588,27 @@ async def seed():
             "message": "KPI 'Micro-irrigation coverage' is at risk — projected to reach only 61% of target by year end",
             "read": False,
             "created_at": datetime.now(timezone.utc) - timedelta(hours=12),
+        },
+        {
+            "district_id": "dehradun",
+            "type": "anomaly_alert",
+            "message": "🚨 CRITICAL: GPS spoofing fraud detected in Dehradun Block (Score: 91) — Agent fabricating field visits",
+            "read": False,
+            "created_at": datetime.now(timezone.utc) - timedelta(hours=6),
+        },
+        {
+            "district_id": "dehradun",
+            "type": "anomaly_alert",
+            "message": "⚠️ Submission velocity anomaly in Dehradun Block (Score: 87) — 9 reports in 2 hours, physically impossible",
+            "read": False,
+            "created_at": datetime.now(timezone.utc) - timedelta(hours=3),
+        },
+        {
+            "district_id": "dehradun",
+            "type": "block_frozen",
+            "message": "Dehradun Block FUNDS FROZEN by DM — All agent assignments and fund disbursements suspended",
+            "read": False,
+            "created_at": datetime.now(timezone.utc) - timedelta(hours=2),
         },
     ]
     for n in notifications:

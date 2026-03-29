@@ -1,27 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOfflineSync } from '../utils/OfflineSyncContext';
+import api from '../utils/api';
 
-// ── Seed Data: Farmers assigned to tasks ────────────────────
-const SEED_FARMERS = {
-  seed_distribution: [
-    { id: 'f-sd-1', name: 'Rajesh Rawat', village: 'Raithal', status: 'in_progress' },
-    { id: 'f-sd-2', name: 'Suresh Bisht', village: 'Dyara', status: 'not_completed' },
-    { id: 'f-sd-3', name: 'Mahesh Negi', village: 'Barsu', status: 'completed' },
-    { id: 'f-sd-4', name: 'Ramesh Panwar', village: 'Gangotri', status: 'in_progress' },
-    { id: 'f-sd-5', name: 'Dinesh Chauhan', village: 'Raithal', status: 'not_completed' },
-    { id: 'f-sd-6', name: 'Geeta Dobhal', village: 'Dyara', status: 'completed' },
-    { id: 'f-sd-7', name: 'Kavita Semwal', village: 'Barsu', status: 'in_progress' },
-  ],
-  canal_inspection: [
-    { id: 'f-ci-1', name: 'Mohan Dobhal', village: 'Harsil', status: 'in_progress' },
-    { id: 'f-ci-2', name: 'Sohan Semwal', village: 'Sukhi', status: 'completed' },
-    { id: 'f-ci-3', name: 'Rohan Bhandari', village: 'Jhala', status: 'not_completed' },
-    { id: 'f-ci-4', name: 'Kiran Joshi', village: 'Dharali', status: 'in_progress' },
-    { id: 'f-ci-5', name: 'Prem Painuli', village: 'Harsil', status: 'completed' },
-    { id: 'f-ci-6', name: 'Deepak Bhatt', village: 'Sukhi', status: 'not_completed' },
-  ],
+const ACTIVITY_LABELS = {
+  seed_distribution: { label: 'Seed Distribution', icon: '🌾' },
+  irrigation_work: { label: 'Irrigation Work', icon: '🚿' },
+  kcc_loan_camp: { label: 'KCC Loan Camp', icon: '🏦' },
+  soil_health_card: { label: 'Soil Health Card', icon: '🧪' },
+  storage_facility: { label: 'Storage Facility', icon: '🏗️' },
+  training: { label: 'Training', icon: '📚' },
+  canal_inspection: { label: 'Canal Inspection', icon: '🚿' },
 };
 
 const statusLabel = {
@@ -33,12 +23,49 @@ const statusLabel = {
 export default function FieldAgentDashboard() {
   const { user } = useAuth();
   const { isOnline, offlineQueue, syncData, syncing } = useOfflineSync();
-  const [activeTab, setActiveTab] = useState('seed_distribution');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState(null);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/submissions/agent/dashboard');
+      setDashboardData(res.data);
+      // Set first tab as active
+      const taskKeys = Object.keys(res.data.tasks || {});
+      if (taskKeys.length > 0 && !activeTab) {
+        setActiveTab(taskKeys[0]);
+      }
+      setError('');
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setError('Could not load dashboard data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
   const pendingSyncs = offlineQueue.length;
-  const activeFarmers = SEED_FARMERS[activeTab] || [];
-  const seedCount = SEED_FARMERS.seed_distribution.length;
-  const canalCount = SEED_FARMERS.canal_inspection.length;
+  const tasks = dashboardData?.tasks || {};
+  const taskKeys = Object.keys(tasks);
+  const activeFarmers = activeTab ? (tasks[activeTab]?.farmers || []) : [];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 bg-surface flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 mx-auto border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm text-ink-secondary font-semibold">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 bg-surface">
@@ -50,6 +77,11 @@ export default function FieldAgentDashboard() {
           <h1 className="text-2xl font-bold text-ink">
             Namaste, <span className="text-primary">{user?.name?.split(' ')[0] || 'Agent'}</span>
           </h1>
+          {dashboardData && (
+            <p className="text-xs text-ink-muted mt-1">
+              {dashboardData.total_farmers} farmers in block • {dashboardData.agent?.completed_tasks || 0} tasks completed
+            </p>
+          )}
         </div>
 
         {/* System Alerts */}
@@ -75,6 +107,13 @@ export default function FieldAgentDashboard() {
           </div>
         )}
 
+        {error && (
+          <div className="bg-danger-light border-l-4 border-danger p-3 text-danger text-sm font-semibold">
+            {error}
+            <button onClick={fetchDashboard} className="ml-2 underline">Retry</button>
+          </div>
+        )}
+
         {/* New Field Entry Button */}
         <Link
           to="/submit"
@@ -84,79 +123,79 @@ export default function FieldAgentDashboard() {
           <span className="text-lg">→</span>
         </Link>
 
-        {/* Two Task Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Seed Distribution Card */}
-          <button
-            onClick={() => setActiveTab('seed_distribution')}
-            className={`card text-left ${
-              activeTab === 'seed_distribution'
-                ? 'border-2 border-success bg-success-light'
-                : ''
-            }`}
-          >
-            <div className="text-2xl mb-2">🌾</div>
-            <h3 className="text-sm font-bold text-ink">Seed Distribution</h3>
-            <p className="text-xs text-ink-secondary mt-1">Dunda Zone A</p>
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-2xl font-bold text-success">{seedCount}</span>
-              <span className="text-xs text-ink-muted">Farmers</span>
-            </div>
-          </button>
-
-          {/* Canal Inspection Card */}
-          <button
-            onClick={() => setActiveTab('canal_inspection')}
-            className={`card text-left ${
-              activeTab === 'canal_inspection'
-                ? 'border-2 border-primary bg-blue-50'
-                : ''
-            }`}
-          >
-            <div className="text-2xl mb-2">🚿</div>
-            <h3 className="text-sm font-bold text-ink">Canal Inspection</h3>
-            <p className="text-xs text-ink-secondary mt-1">Bhatwari Sector 3</p>
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">{canalCount}</span>
-              <span className="text-xs text-ink-muted">Farmers</span>
-            </div>
-          </button>
-        </div>
+        {/* Task Cards */}
+        {taskKeys.length > 0 && (
+          <div className={`grid gap-3 ${taskKeys.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {taskKeys.map((taskKey) => {
+              const task = tasks[taskKey];
+              const meta = ACTIVITY_LABELS[taskKey] || { label: taskKey.replace(/_/g, ' '), icon: '📋' };
+              return (
+                <button
+                  key={taskKey}
+                  onClick={() => setActiveTab(taskKey)}
+                  className={`card text-left ${
+                    activeTab === taskKey
+                      ? 'border-2 border-success bg-success-light'
+                      : ''
+                  }`}
+                >
+                  <div className="text-2xl mb-2">{meta.icon}</div>
+                  <h3 className="text-sm font-bold text-ink capitalize">{meta.label}</h3>
+                  <p className="text-xs text-ink-secondary mt-1">
+                    {task.completed}/{task.total} completed
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-2xl font-bold text-success">{task.total}</span>
+                    <span className="text-xs text-ink-muted">Farmers</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Farmer List */}
-        <div className="card p-0 overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-surface flex items-center justify-between">
-            <h2 className="text-sm font-bold text-ink uppercase tracking-wide">
-              {activeTab === 'seed_distribution' ? '🌾 Seed Distribution' : '🚿 Canal Inspection'} — Assigned Farmers
-            </h2>
-            <span className="status-pill bg-surface text-ink-secondary border border-border">
-              {activeFarmers.length}
-            </span>
-          </div>
+        {activeTab && (
+          <div className="card p-0 overflow-hidden">
+            <div className="px-5 py-3 border-b border-border bg-surface flex items-center justify-between">
+              <h2 className="text-sm font-bold text-ink uppercase tracking-wide">
+                {(ACTIVITY_LABELS[activeTab]?.icon || '📋')}{' '}
+                {(ACTIVITY_LABELS[activeTab]?.label || activeTab.replace(/_/g, ' '))} — Assigned Farmers
+              </h2>
+              <span className="status-pill bg-surface text-ink-secondary border border-border">
+                {activeFarmers.length}
+              </span>
+            </div>
 
-          <div className="divide-y divide-border">
-            {activeFarmers.map((farmer) => (
-              <Link
-                key={farmer.id}
-                to={`/submit/${farmer.id}?name=${encodeURIComponent(farmer.name)}&village=${encodeURIComponent(farmer.village)}&task=${activeTab}&status=${farmer.status}`}
-                className="flex items-center justify-between px-5 py-3 hover:bg-surface"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                    {farmer.name.split(' ').map(n => n[0]).join('')}
+            <div className="divide-y divide-border">
+              {activeFarmers.map((farmer) => (
+                <Link
+                  key={farmer.id}
+                  to={`/submit/${farmer.id}?name=${encodeURIComponent(farmer.name)}&village=${encodeURIComponent(farmer.village)}&task=${activeTab}&status=${farmer.status}`}
+                  className="flex items-center justify-between px-5 py-3 hover:bg-surface"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                      {farmer.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-ink">{farmer.name}</p>
+                      <p className="text-xs text-ink-muted">{farmer.village}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{farmer.name}</p>
-                    <p className="text-xs text-ink-muted">{farmer.village}</p>
-                  </div>
+                  <span className={`status-pill ${(statusLabel[farmer.status] || statusLabel.not_completed).color}`}>
+                    {(statusLabel[farmer.status] || statusLabel.not_completed).text}
+                  </span>
+                </Link>
+              ))}
+              {activeFarmers.length === 0 && (
+                <div className="px-5 py-8 text-center text-ink-muted text-sm">
+                  No farmers assigned yet.
                 </div>
-                <span className={`status-pill ${statusLabel[farmer.status].color}`}>
-                  {statusLabel[farmer.status].text}
-                </span>
-              </Link>
-            ))}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

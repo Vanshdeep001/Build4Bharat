@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useOfflineSync } from '../utils/OfflineSyncContext';
@@ -31,8 +31,18 @@ export default function SubmissionForm() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [qrData, setQrData] = useState(null);
 
-  // Capture GPS when photo is taken or selected
+  // Fetch QR when result becomes available
+  useEffect(() => {
+    if (result && !result.offline && result.id) {
+      api.get(`/verify/qr-data/${result.id}`)
+        .then(res => setQrData(res.data))
+        .catch(err => console.error("Could not load QR:", err));
+    }
+  }, [result]);
+
+  // Capture GPS on mount and when photo is taken or selected
   const captureGPS = () => {
     setGpsLoading(true);
     if (navigator.geolocation) {
@@ -45,8 +55,7 @@ export default function SubmissionForm() {
           }));
           setGpsLoading(false);
         },
-        (err) => {
-          console.warn('Geolocation failed:', err.message);
+        (error) => {
           // Fallback to demo coordinates
           setForm(prev => ({
             ...prev,
@@ -62,6 +71,9 @@ export default function SubmissionForm() {
     }
   };
 
+  useEffect(() => {
+    captureGPS();
+  }, []);
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -80,8 +92,10 @@ export default function SubmissionForm() {
       setError('Please enter a description.');
       return;
     }
-    if (!form.photoBase64) {
-      setError('Please take or upload a photo.');
+    // Photo is recommended but not mandatory
+    if (!form.photoBase64 && !form.skipPhotoConfirm) {
+      setError('No photo attached. Click "Submit Report" again to submit without photo.');
+      setForm(prev => ({ ...prev, skipPhotoConfirm: true }));
       return;
     }
 
@@ -140,6 +154,7 @@ export default function SubmissionForm() {
         offline: false,
         message: res.data.is_anomaly ? 'Sent! (Under Review)' : 'Submitted successfully!',
         hash: res.data.submission_hash,
+        id: res.data.id,
         is_anomaly: res.data.is_anomaly
       });
       syncData();
@@ -182,9 +197,20 @@ export default function SubmissionForm() {
             📩 Send Receipt on WhatsApp
           </a>
 
+          {/* QR Code Verification */}
+          {qrData && (
+            <div className="card bg-surface border-2 border-primary-light p-6 space-y-4 text-center mt-6">
+              <h3 className="text-sm font-bold text-primary uppercase tracking-wide">Farmer Verification</h3>
+              <p className="text-xs text-ink-muted">Show this QR to the farmer to verify receipt of benefits.</p>
+              <div className="flex justify-center bg-white p-4 rounded-xl border border-border inline-block mx-auto">
+                <img src={qrData.qr_base64} alt="Verification QR" className="w-48 h-48" />
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => navigate('/field')}
-            className="btn-primary w-full py-4"
+            className="btn-primary w-full py-4 mt-6"
           >
             ← Back to Dashboard
           </button>

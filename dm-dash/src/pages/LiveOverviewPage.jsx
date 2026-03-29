@@ -1,10 +1,42 @@
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import AnalyticalOverview from '../components/AnalyticalOverview';
 import UttarakhandMap from '../components/UttarakhandMap';
 import AIDailySummary from '../components/AIDailySummary';
+import { fetchAnomalies, fetchAnomaliesByDistrict } from '../api';
 
 export function LiveOverviewPage() {
   const { selectedDistrict, setSelectedDistrict } = useOutletContext();
+  const [liveAnomalies, setLiveAnomalies] = useState([]);
+  const [loadingAnomalies, setLoadingAnomalies] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoadingAnomalies(true);
+
+    const loadAnomalies = async () => {
+      try {
+        let res = [];
+        if (!selectedDistrict || selectedDistrict === 'Uttarakhand') {
+          res = await fetchAnomalies();
+        } else {
+          const districtId = selectedDistrict.toLowerCase().replace(/\s+/g, '_');
+          res = await fetchAnomaliesByDistrict(districtId);
+        }
+        if (active && res) {
+          // Take top 5 recent anomalies
+          setLiveAnomalies(res.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Failed to load anomalies", err);
+      } finally {
+        if (active) setLoadingAnomalies(false);
+      }
+    };
+
+    loadAnomalies();
+    return () => { active = false; };
+  }, [selectedDistrict]);
 
   return (
     <div className="p-0 space-y-10 animate-in fade-in duration-700">
@@ -61,77 +93,75 @@ export function LiveOverviewPage() {
         </div>
 
         <div className="divide-y divide-outline-variant/10">
-          {[
-            {
-              severity: 'Critical',
-              district: 'Haridwar',
-              reason: 'Statistical Outlier: Beneficiary fund withdrawal frequency exceeds 300% of seasonal norm.',
-              time: '14:22:01 IST',
-              icon: 'error'
-            },
-            {
-              severity: 'Alert',
-              district: 'Chamoli',
-              reason: 'Geo-fencing Mismatch: Fertilizer distribution point logs outside of assigned block radius.',
-              time: '13:58:12 IST',
-              icon: 'warning'
-            },
-            {
-              severity: 'Minor',
-              district: 'Udham Singh Nagar',
-              reason: 'Duplication Flag: Matching biometric hashes found in 3 separate subsidy application nodes.',
-              time: '12:11:45 IST',
-              icon: 'info'
-            },
-          ].map((log) => (
-            <div
-              key={`${log.severity}-${log.district}`}
-              className="p-8 flex items-center gap-8 hover:bg-surface-container/30 transition-all group relative cursor-pointer"
-            >
-              <div
-                className={[
-                  'w-1.5 h-16 absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all opacity-0 group-hover:opacity-100',
-                  log.severity === 'Critical' ? 'bg-error' : log.severity === 'Alert' ? 'bg-orange-500' : 'bg-primary',
-                ].join(' ')}
-              ></div>
-              
-              <div
-                className={[
-                  'flex flex-col items-center justify-center w-14 h-14 rounded-2xl shrink-0 shadow-sm transition-transform group-hover:scale-110',
-                  log.severity === 'Critical'
-                    ? 'bg-error text-white'
-                    : 'bg-orange-100 text-orange-600',
-                ].join(' ')}
-              >
-                <span className="material-symbols-outlined">{log.icon}</span>
-                <span className="text-[8px] font-black uppercase">{log.severity}</span>
-              </div>
-
-              <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
-                <div className="md:col-span-1">
-                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">
-                    District
-                  </p>
-                  <p className="text-sm font-black text-primary">{log.district}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">
-                    Isolation Intelligence
-                  </p>
-                  <p className="text-sm font-medium text-on-surface">{log.reason}</p>
-                </div>
-                <div className="md:col-span-1 text-right">
-                  <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-tighter opacity-40 mb-1">
-                    Log Timestamp
-                  </p>
-                  <p className="text-xs font-black text-on-surface tabular-nums">{log.time}</p>
-                </div>
-              </div>
-              <button className="p-3 rounded-full hover:bg-primary/10 text-primary transition-all group-hover:translate-x-1 border border-transparent hover:border-primary/20">
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
+          {loadingAnomalies ? (
+            <div className="p-8 text-center text-on-surface-variant font-bold opacity-50 animate-pulse">
+              Syncing Live Earth Observation Logs...
             </div>
-          ))}
+          ) : liveAnomalies.length === 0 ? (
+            <div className="p-8 text-center text-on-surface-variant font-bold opacity-50">
+              No anomalies detected for {selectedDistrict} in the last 24 hours.
+            </div>
+          ) : (
+            liveAnomalies.map((log) => {
+              const rule = log.rule_violated || 'system_flag';
+              const isHigh = log.severity === 'high';
+              const icon = isHigh ? 'error' : 'warning';
+              const title = isHigh ? 'Critical' : 'Alert';
+              const distName = log.district_name || log.district_id || selectedDistrict;
+
+              return (
+                <div
+                  key={log._id}
+                  className="p-8 flex items-center gap-8 hover:bg-surface-container/30 transition-all group relative cursor-pointer"
+                >
+                  <div
+                    className={[
+                      'w-1.5 h-16 absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full transition-all opacity-0 group-hover:opacity-100',
+                      isHigh ? 'bg-error' : 'bg-orange-500',
+                    ].join(' ')}
+                  ></div>
+                  
+                  <div
+                    className={[
+                      'flex flex-col items-center justify-center w-14 h-14 rounded-2xl shrink-0 shadow-sm transition-transform group-hover:scale-110',
+                      isHigh
+                        ? 'bg-error text-white'
+                        : 'bg-orange-100 text-orange-600',
+                    ].join(' ')}
+                  >
+                    <span className="material-symbols-outlined">{icon}</span>
+                    <span className="text-[8px] font-black uppercase">{title}</span>
+                  </div>
+
+                  <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+                    <div className="md:col-span-1">
+                      <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">
+                        District
+                      </p>
+                      <p className="text-sm font-black text-primary truncate" title={distName}>{distName}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">
+                        {rule.replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-sm font-medium text-on-surface clamp-2">{log.description || 'AI Flag generated from pipeline mismatch'}</p>
+                    </div>
+                    <div className="md:col-span-1 text-right">
+                      <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-tighter opacity-40 mb-1">
+                        Log Timestamp
+                      </p>
+                      <p className="text-xs font-black text-on-surface tabular-nums">
+                        {log.created_at ? new Date(log.created_at).toLocaleTimeString('en-IN') : 'Live'}
+                      </p>
+                    </div>
+                  </div>
+                  <button className="p-3 rounded-full hover:bg-primary/10 text-primary transition-all group-hover:translate-x-1 border border-transparent hover:border-primary/20">
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
     </div>

@@ -12,16 +12,38 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/login")
 async def login(data: UserLogin):
     db = get_db()
-    user = await db.users.find_one({"phone": data.phone})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Try finding in field_agents collection FIRST for field agents
+    # This ensures we use the canonical field_agents _id in the JWT,
+    # which matches the agent_id stored in submissions.
+    field_agent = await db.field_agents.find_one({"phone": data.phone})
+    
+    if field_agent:
+        user = field_agent
+        role = "field_agent"
+    else:
+        # Not a field agent — check users collection (admins, etc.)
+        user = await db.users.find_one({"phone": data.phone})
+        if user:
+            role = user.get("role", "district_admin")
+        else:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not bcrypt.checkpw(data.password.encode("utf-8"), user["password_hash"].encode("utf-8")):
+    # Check password: bcrypt hash or raw match (for temp test agents)
+    matched = False
+    try:
+        matched = bcrypt.checkpw(data.password.encode("utf-8"), user["password_hash"].encode("utf-8"))
+    except ValueError:
+        # Not a bcrypt hash
+        if user["password_hash"] == data.password:
+            matched = True
+
+    if not matched:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token_data = {
         "user_id": str(user["_id"]),
-        "role": user["role"],
+        "role": role,
         "district_id": user.get("district_id", ""),
         "block_id": user.get("block_id", ""),
         "exp": datetime.now(timezone.utc) + timedelta(hours=settings.JWT_EXPIRY_HOURS),
@@ -34,7 +56,7 @@ async def login(data: UserLogin):
             "id": str(user["_id"]),
             "name": user["name"],
             "phone": user["phone"],
-            "role": user["role"],
+            "role": role,
             "district_id": user.get("district_id", ""),
             "block_id": user.get("block_id", ""),
         },

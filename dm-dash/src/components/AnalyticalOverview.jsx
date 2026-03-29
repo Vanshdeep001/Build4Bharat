@@ -1,74 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchOverview, fetchDistrictDashboard } from '../api';
 
 const AnalyticalOverview = ({ selectedDistrict }) => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
     fund: 0,
     beneficiaries: 0,
     anomalies: 0,
     grievances: 0,
-    fundTrend: '+8.2%',
-    beneficiariesAuth: '94% AUTH',
-    anomaliesSeverity: '12 CRITICAL',
-    grievancesAvg: '4.2D AVG'
+    fundTrend: 'LIVE',
+    beneficiariesAuth: 'LIVE',
+    anomaliesSeverity: 'CRITICAL OPS',
+    grievancesAvg: 'REAL-TIME'
   });
 
   useEffect(() => {
-    // Simulate fetching and parsing CSV
-    const csvData = `district,fund_utilization_cr,beneficiaries_m,ai_anomaly_flags,open_grievances
-Almora,1200,0.08,45,120
-Bageshwar,800,0.05,22,85
-Chamoli,1100,0.07,38,110
-Champawat,750,0.04,15,60
-Dehradun,3500,0.25,150,450
-Haridwar,3200,0.22,130,410
-Nainital,1800,0.12,75,210
-Pauri Garhwal,1400,0.10,55,150
-Pithoragarh,1000,0.06,32,95
-Rudraprayag,700,0.04,12,55
-Tehri Garhwal,1500,0.11,65,180
-Udham Singh Nagar,2800,0.18,95,320
-Uttarkashi,950,0.06,28,80`;
+    let active = true;
+    setLoading(true);
 
-    const lines = csvData.split('\n').slice(1);
-    const parsed = lines.map(line => {
-      const [district, fund, beneficiaries, anomalies, grievances] = line.split(',');
-      return {
-        district,
-        fund: parseFloat(fund),
-        beneficiaries: parseFloat(beneficiaries),
-        anomalies: parseInt(anomalies),
-        grievances: parseInt(grievances)
-      };
-    });
-    setData(parsed);
-  }, []);
+    const loadData = async () => {
+      try {
+        if (!selectedDistrict || selectedDistrict === 'Uttarakhand') {
+          const res = await fetchOverview();
+          if (!active) return;
+          if (res && res.state_totals) {
+            setMetrics(prev => ({
+              ...prev,
+              fund: res.state_totals.total_fund_utilised / 10000000, // converted to Cr if expected in large numbers
+              beneficiaries: res.state_totals.total_farmers / 100000, // converted to Lakhs as 'M' fallback
+              anomalies: res.state_totals.open_anomalies,
+              grievances: res.state_totals.total_disputes,
+              fundTrend: `${res.state_totals.fund_utilisation_pct}% UTIL`,
+              beneficiariesAuth: `${res.state_totals.total_submissions} SCANS`,
+              anomaliesSeverity: `${res.state_totals.open_anomalies} FLAGS`,
+              grievancesAvg: `${res.state_totals.dispute_rate_pct}% DISPUTE`
+            }));
+          }
+        } else {
+          const districtId = selectedDistrict.toLowerCase().replace(/\s+/g, '_');
+          const res = await fetchDistrictDashboard(districtId);
+          if (!active) return;
+          if (res && !res.error) {
+            setMetrics(prev => ({
+              ...prev,
+              fund: res.total_fund_utilised / 10000000,
+              beneficiaries: res.total_farmers / 100000,
+              anomalies: res.open_anomalies,
+              grievances: res.total_disputes,
+              fundTrend: `${res.fund_utilisation_pct}% UTIL`,
+              beneficiariesAuth: `${res.total_submissions} SCANS`,
+              anomaliesSeverity: `${res.open_anomalies} FLAGS`,
+              grievancesAvg: `${res.dispute_rate_pct}% DISPUTE`
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch analytical overview", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    if (data.length === 0) return;
-
-    let filtered = data;
-    if (selectedDistrict && selectedDistrict !== 'Uttarakhand') {
-      filtered = data.filter(d => d.district.toLowerCase() === selectedDistrict.toLowerCase());
-    }
-
-    const totals = filtered.reduce((acc, curr) => ({
-      fund: acc.fund + curr.fund,
-      beneficiaries: acc.beneficiaries + curr.beneficiaries,
-      anomalies: acc.anomalies + curr.anomalies,
-      grievances: acc.grievances + curr.grievances
-    }), { fund: 0, beneficiaries: 0, anomalies: 0, grievances: 0 });
-
-    setMetrics(prev => ({
-      ...prev,
-      fund: totals.fund,
-      beneficiaries: totals.beneficiaries.toFixed(2),
-      anomalies: totals.anomalies,
-      grievances: totals.grievances
-    }));
-  }, [selectedDistrict, data]);
+    loadData();
+    return () => { active = false; };
+  }, [selectedDistrict]);
 
   return (
     <div className="mb-10 space-y-8">
@@ -109,8 +106,14 @@ Uttarkashi,950,0.06,28,80`;
           <div className="space-y-1 relative">
             <p className="text-[0.65rem] font-black text-on-surface-variant/40 uppercase tracking-[0.15em]">Fund Utilization</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-headline font-black text-on-surface">₹{metrics.fund.toLocaleString()}</span>
-              <span className="text-sm font-bold text-on-surface-variant opacity-60">Cr</span>
+              {loading ? (
+                <span className="text-3xl font-headline font-black text-on-surface opacity-50">...</span>
+              ) : (
+                <>
+                  <span className="text-3xl font-headline font-black text-on-surface">₹{metrics.fund.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-on-surface-variant opacity-60">Cr</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -129,8 +132,14 @@ Uttarkashi,950,0.06,28,80`;
           <div className="space-y-1 relative">
             <p className="text-[0.65rem] font-black text-on-surface-variant/40 uppercase tracking-[0.15em]">Verified Beneficiaries</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-headline font-black text-on-surface">{metrics.beneficiaries}</span>
-              <span className="text-sm font-bold text-on-surface-variant opacity-60">M</span>
+              {loading ? (
+                <span className="text-3xl font-headline font-black text-on-surface opacity-50">...</span>
+              ) : (
+                <>
+                  <span className="text-3xl font-headline font-black text-on-surface">{(metrics.beneficiaries * 10).toFixed(2)}</span>
+                  <span className="text-sm font-bold text-on-surface-variant opacity-60">Lakhs</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -149,7 +158,11 @@ Uttarkashi,950,0.06,28,80`;
           <div className="space-y-1 relative">
             <p className="text-[0.65rem] font-black text-on-surface-variant/40 uppercase tracking-[0.15em]">AI Anomaly Flags</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-headline font-black text-error">{metrics.anomalies}</span>
+              {loading ? (
+                 <span className="text-3xl font-headline font-black text-error opacity-50">...</span>
+              ) : (
+                 <span className="text-3xl font-headline font-black text-error">{metrics.anomalies}</span>
+              )}
             </div>
           </div>
         </div>
@@ -168,7 +181,11 @@ Uttarkashi,950,0.06,28,80`;
           <div className="space-y-1 relative">
             <p className="text-[0.65rem] font-black text-on-surface-variant/40 uppercase tracking-[0.15em]">Open Grievances</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-headline font-black text-on-surface">{metrics.grievances}</span>
+              {loading ? (
+                <span className="text-3xl font-headline font-black text-on-surface opacity-50">...</span>
+              ) : (
+                <span className="text-3xl font-headline font-black text-on-surface">{metrics.grievances}</span>
+              )}
             </div>
           </div>
         </div>

@@ -16,3 +16,4 @@ python-socketio
 joblib
 httpx
 numpy
+qrcode[pil]

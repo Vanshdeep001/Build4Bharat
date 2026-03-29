@@ -1,313 +1,426 @@
-import React, { useState } from 'react';
-
-// --- Dummy Data ---
-const initialFundsData = [
-  { id: 1, district: "Dehradun", block: "Vikasnagar", allocated: 250, utilized: 210, status: "Active" },
-  { id: 2, district: "Haridwar", block: "Roorkee", allocated: 180, utilized: 175, status: "Critical" },
-  { id: 3, district: "Nainital", block: "Haldwani", allocated: 300, utilized: 120, status: "Active" },
-  { id: 4, district: "Udham Singh Nagar", block: "Kashipur", allocated: 420, utilized: 410, status: "Frozen" },
-  { id: 5, district: "Almora", block: "Ranikhet", allocated: 150, utilized: 45, status: "Active" }
-];
-
-const initialUsersData = [
-  { id: 101, name: "Veer Vikram Singh", role: "District Magistrate", jurisdiction: "Dehradun", status: "Active" },
-  { id: 102, name: "Rajesh Kumar", role: "Block Dev. Officer", jurisdiction: "Vikasnagar", status: "Active" },
-  { id: 103, name: "Sneha Kapur", role: "Block Dev. Officer", jurisdiction: "Kashipur", status: "Suspended" },
-  { id: 104, name: "Amit Singh", role: "District Magistrate", jurisdiction: "Nainital", status: "Active" },
-  { id: 105, name: "Priya Devi", role: "Block Dev. Officer", jurisdiction: "Roorkee", status: "On Leave" }
-];
+import React, { useState, useEffect } from 'react';
+import { fetchBlocks, fetchAnomalies, freezeBlock, unfreezeBlock } from '../api';
 
 export function AdministrativeActionsPage() {
-  const [activeTab, setActiveTab] = useState('funds');
-  
-  // States for interaction simulation
-  const [fundsData, setFundsData] = useState(initialFundsData);
-  const [usersData, setUsersData] = useState(initialUsersData);
+  const [blocks, setBlocks] = useState([]);
+  const [anomalies, setAnomalies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLog, setActionLog] = useState([]);
+  const [processingBlock, setProcessingBlock] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
-
-  // KPIs State
-  const [kpiTargets, setKpiTargets] = useState({
-    seedDistribution: 25000,
-    soilHealthCards: 150000,
-    irrigationSetup: 450,
-  });
+  const [selectedBlock, setSelectedBlock] = useState(null);
 
   const showToast = (msg) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+    setTimeout(() => setToastMsg(''), 5000);
   };
 
-  // Fund Actions
-  const toggleFundStatus = (id, currentStatus) => {
-    const newStatus = currentStatus === 'Frozen' ? 'Active' : 'Frozen';
-    setFundsData(fundsData.map(f => f.id === id ? { ...f, status: newStatus } : f));
-    showToast(`Fund status updated to ${newStatus}`);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [blockRes, anomalyRes] = await Promise.all([
+        fetchBlocks(),
+        fetchAnomalies()
+      ]);
+      if (blockRes) setBlocks(blockRes);
+      if (anomalyRes) setAnomalies(anomalyRes);
+    } catch (err) {
+      console.error('Failed to load admin data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const reallocateFunds = (id) => showToast(`Initiated Reallocation Workflow for ID ${id}`);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  // User Actions
-  const toggleUserStatus = (id, currentStatus) => {
-    const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
-    setUsersData(usersData.map(u => u.id === id ? { ...u, status: newStatus } : u));
-    showToast(`User status updated to ${newStatus}`);
+  const handleFreeze = async (block) => {
+    const isFrozen = block.frozen_status === 'frozen';
+    const action = isFrozen ? 'UNFREEZE' : 'FREEZE';
+
+    if (!confirm(`⚠️ DM Administrative Action\n\n${action} "${block.block_name}" (${block.district_name})?\n\n${
+      isFrozen
+        ? '✅ This will RESUME all operations:\n• BDO can assign new field agents\n• BDO can assign farmers to agents\n• Fund disbursements will resume'
+        : '🚫 This will STOP all operations:\n• BDO CANNOT assign new field agents\n• BDO CANNOT assign farmers\n• Fund disbursements will be HALTED\n• All pending assignments will be locked'
+    }`)) return;
+
+    setProcessingBlock(block.block_id);
+    
+    const reason = isFrozen ? '' : `DM Order: ${block.anomaly_count || 0} anomalies flagged in ${block.block_name}. Block frozen pending investigation.`;
+    
+    const res = isFrozen
+      ? await unfreezeBlock(block.block_id)
+      : await freezeBlock(block.block_id, reason);
+
+    setProcessingBlock(null);
+
+    if (res && res.success) {
+      const logEntry = {
+        time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        action: isFrozen ? 'UNFROZEN' : 'FROZEN',
+        block: `${block.block_name} (${block.district_name})`,
+        actor: 'District Magistrate',
+      };
+      setActionLog(prev => [logEntry, ...prev]);
+      showToast(`${isFrozen ? '✅' : '🔒'} ${block.block_name} has been ${isFrozen ? 'UNFROZEN — operations resumed' : 'FROZEN — all operations suspended'}`);
+      await loadData();
+    } else {
+      showToast('❌ Action failed. Please try again.');
+    }
   };
 
-  const reassignUser = (name) => showToast(`Initiated Reassignment Workflow for ${name}`);
+  const frozenBlocks = blocks.filter(b => b.frozen_status === 'frozen');
+  const criticalBlocks = blocks.filter(b => b.status === 'CRITICAL');
+  const warningBlocks = blocks.filter(b => b.status === 'WARNING');
+  const activeBlocks = blocks.filter(b => b.frozen_status !== 'frozen');
 
-  // KPI Actions
-  const saveKpis = () => showToast(`KPI Targets successfully saved for the upcoming quarter!`);
+  // Get anomalies for the selected block
+  const blockAnomalies = selectedBlock
+    ? anomalies.filter(a => a.block_id === selectedBlock.block_id)
+    : [];
 
   return (
-    <div className="p-0 space-y-8 animate-in fade-in duration-500 relative">
-      
-      {/* Toast Notification */}
+    <div className="space-y-8 relative">
+      {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-8 right-8 bg-surface-container-highest text-on-surface font-bold px-6 py-4 rounded-xl shadow-2xl border border-outline-variant/20 flex items-center gap-3 z-50 animate-in slide-in-from-bottom-5">
-          <span className="material-symbols-outlined text-primary">check_circle</span>
-          {toastMsg}
+          <span className="text-xl">{toastMsg.startsWith('❌') ? '❌' : '✅'}</span>
+          <span className="text-sm">{toastMsg}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-surface-container-lowest rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-sm p-8">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-error/10 text-error rounded-2xl flex items-center justify-center">
-            <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
-          </div>
-          <div>
-            <h1 className="font-headline text-3xl font-black text-on-surface tracking-tight leading-none mb-1">
-              Administrative Actions
-            </h1>
-            <p className="text-sm font-medium text-on-surface-variant">
-              Manage allocations, personnel deployments, and strategic targets
+      <header className="flex items-end justify-between">
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-error bg-error/10 px-3 py-1 rounded-full">
+            Sovereign Authority
+          </span>
+          <h1 className="text-4xl font-headline font-black text-on-surface tracking-tight">
+            Administrative Actions
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+            <p className="text-sm font-label font-bold text-on-surface-variant uppercase tracking-widest opacity-60">
+              Block Operations Control — Freeze/Unfreeze Fund Disbursements
             </p>
           </div>
         </div>
+      </header>
+
+      {/* KPI Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Blocks', value: blocks.length, icon: 'grid_view', color: 'primary' },
+          { label: 'Frozen Blocks', value: frozenBlocks.length, icon: 'ac_unit', color: frozenBlocks.length > 0 ? 'blue-500' : 'primary' },
+          { label: 'Critical Flags', value: criticalBlocks.length, icon: 'error', color: criticalBlocks.length > 0 ? 'error' : 'primary' },
+          { label: 'Active Alerts', value: anomalies.filter(a => a.status === 'open').length, icon: 'warning', color: 'amber-500' },
+        ].map(({ label, value, icon, color }) => (
+          <div key={label} className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`material-symbols-outlined text-sm text-${color}`}>{icon}</span>
+              <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">{label}</p>
+            </div>
+            <p className={`text-3xl font-headline font-black text-${color}`}>
+              {loading ? '...' : value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* Main Content Area */}
-      <section className="bg-surface-container-lowest rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-sm min-h-[600px] flex flex-col">
-        
-        {/* Tab Navigation */}
-        <div className="flex border-b border-outline-variant/10 bg-surface-container/20">
-          <button 
-            onClick={() => setActiveTab('funds')}
-            className={`flex-1 py-5 font-bold uppercase tracking-widest text-xs transition-colors border-b-2 flex items-center justify-center gap-2 ${activeTab === 'funds' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-on-surface-variant hover:bg-surface-container-low'}`}
-          >
-            <span className="material-symbols-outlined text-lg">account_balance</span>
-            Fund Management
-          </button>
-          <button 
-            onClick={() => setActiveTab('users')}
-            className={`flex-1 py-5 font-bold uppercase tracking-widest text-xs transition-colors border-b-2 flex items-center justify-center gap-2 ${activeTab === 'users' ? 'border-indigo-500 text-indigo-500 bg-indigo-500/5' : 'border-transparent text-on-surface-variant hover:bg-surface-container-low'}`}
-          >
-            <span className="material-symbols-outlined text-lg">manage_accounts</span>
-            User Management
-          </button>
-          <button 
-            onClick={() => setActiveTab('kpi')}
-            className={`flex-1 py-5 font-bold uppercase tracking-widest text-xs transition-colors border-b-2 flex items-center justify-center gap-2 ${activeTab === 'kpi' ? 'border-green-500 text-green-500 bg-green-500/5' : 'border-transparent text-on-surface-variant hover:bg-surface-container-low'}`}
-          >
-            <span className="material-symbols-outlined text-lg">track_changes</span>
-            Set KPI Targets
-          </button>
+      {/* Frozen Blocks Alert */}
+      {frozenBlocks.length > 0 && (
+        <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-blue-500 text-2xl">ac_unit</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-black text-blue-600 uppercase tracking-wider">Active Freezes</h3>
+              <p className="text-sm text-blue-600/80 mt-1">
+                {frozenBlocks.length} block(s) currently frozen. BDOs in these blocks <strong>cannot assign new agents or farmers</strong>.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {frozenBlocks.map(b => (
+                  <span key={b.block_id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-600 border border-blue-500/20 rounded-full text-xs font-black">
+                    <span className="material-symbols-outlined text-[12px]">ac_unit</span>
+                    {b.block_name} ({b.district_name})
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Block Action List */}
+        <div className="lg:col-span-2">
+          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant/10">
+            <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
+              <h3 className="font-headline font-bold text-lg text-on-surface">Block Operations Control</h3>
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Frozen</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-error"></span> Critical</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> Active</span>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="p-12 text-center">
+                <span className="material-symbols-outlined animate-spin text-4xl text-primary">sync</span>
+                <p className="text-sm text-on-surface-variant font-bold mt-3 uppercase tracking-widest">Loading block data...</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-outline-variant/5">
+                {blocks.map(block => {
+                  const isFrozen = block.frozen_status === 'frozen';
+                  const isCritical = block.status === 'CRITICAL';
+                  const isProcessing = processingBlock === block.block_id;
+                  const isSelected = selectedBlock?.block_id === block.block_id;
+
+                  return (
+                    <div
+                      key={`${block.district_id}-${block.block_id}`}
+                      className={`p-5 flex items-center gap-5 transition-all cursor-pointer hover:bg-surface-container-low/50 ${
+                        isSelected ? 'bg-primary/5 border-l-4 border-primary' : ''
+                      } ${isFrozen ? 'bg-blue-500/5' : ''}`}
+                      onClick={() => setSelectedBlock(block)}
+                    >
+                      {/* Status Indicator */}
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        isFrozen ? 'bg-blue-500/20' : isCritical ? 'bg-error/10' : 'bg-green-500/10'
+                      }`}>
+                        <span className={`material-symbols-outlined text-xl ${
+                          isFrozen ? 'text-blue-500' : isCritical ? 'text-error' : 'text-green-500'
+                        }`}>
+                          {isFrozen ? 'ac_unit' : isCritical ? 'warning' : 'check_circle'}
+                        </span>
+                      </div>
+
+                      {/* Block Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-black text-on-surface text-sm">{block.block_name}</h4>
+                          {isFrozen && (
+                            <span className="px-2 py-0.5 bg-blue-500 text-white text-[8px] font-black uppercase tracking-widest rounded">
+                              FROZEN
+                            </span>
+                          )}
+                          {isCritical && !isFrozen && (
+                            <span className="px-2 py-0.5 bg-error text-white text-[8px] font-black uppercase tracking-widest rounded">
+                              CRITICAL
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-on-surface-variant/60 font-bold">
+                          {block.district_name} • {block.anomaly_count || 0} anomalies • {(block.farmer_count || 0).toLocaleString()} farmers
+                        </p>
+                        {isFrozen && block.frozen_reason && (
+                          <p className="text-[10px] text-blue-500/70 mt-1 truncate">{block.frozen_reason}</p>
+                        )}
+                      </div>
+
+                      {/* Fund Utilization Bar */}
+                      <div className="w-24 flex-shrink-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] font-black text-on-surface-variant/40 uppercase">Fund</span>
+                          <span className={`text-xs font-black ${
+                            isCritical ? 'text-error' : 'text-on-surface'
+                          }`}>{block.fund_utilisation_pct || 0}%</span>
+                        </div>
+                        <div className="h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              isFrozen ? 'bg-blue-500' : isCritical ? 'bg-error' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(block.fund_utilisation_pct || 0, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFreeze(block);
+                        }}
+                        disabled={isProcessing}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 flex-shrink-0 ${
+                          isProcessing
+                            ? 'opacity-50 cursor-not-allowed bg-surface-container border-outline-variant/10'
+                            : isFrozen
+                              ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hover:shadow-lg'
+                              : 'bg-error/10 text-error border-error/20 hover:bg-error/20 hover:shadow-lg hover:shadow-error/10'
+                        }`}
+                      >
+                        {isProcessing ? (
+                          <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-[14px]">
+                            {isFrozen ? 'play_circle' : 'block'}
+                          </span>
+                        )}
+                        {isFrozen ? 'Unfreeze' : 'Freeze Funds'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Tab Contents */}
-        <div className="p-8 flex-1 bg-surface-container-lowest">
-          
-          {/* FUNDS TAB */}
-          {activeTab === 'funds' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-headline text-xl font-bold text-on-surface">Financial Allocations (Cr)</h3>
-                <button className="bg-primary text-on-primary px-4 py-2 rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">add</span>
-                  New Allocation
-                </button>
+        {/* Right Sidebar — Block Detail + Action Log */}
+        <div className="space-y-6">
+          {/* Selected Block Detail */}
+          {selectedBlock ? (
+            <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  selectedBlock.frozen_status === 'frozen' ? 'bg-blue-500/20' : 'bg-primary/10'
+                }`}>
+                  <span className={`material-symbols-outlined ${
+                    selectedBlock.frozen_status === 'frozen' ? 'text-blue-500' : 'text-primary'
+                  }`}>
+                    {selectedBlock.frozen_status === 'frozen' ? 'ac_unit' : 'location_city'}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-black text-on-surface">{selectedBlock.block_name}</h3>
+                  <p className="text-xs text-on-surface-variant/60 font-bold">{selectedBlock.district_name}</p>
+                </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-outline-variant/20">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low border-b border-outline-variant/20">
-                      <th className="p-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">District / Block</th>
-                      <th className="p-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Allocated</th>
-                      <th className="p-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider hidden sm:table-cell">Utilized (%)</th>
-                      <th className="p-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
-                      <th className="p-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/10">
-                    {fundsData.map(fund => {
-                      const utilRate = ((fund.utilized / fund.allocated) * 100).toFixed(1);
-                      return (
-                        <tr key={fund.id} className="hover:bg-surface-container-lowest/50 group">
-                          <td className="p-4">
-                            <div className="font-bold text-on-surface">{fund.district}</div>
-                            <div className="text-xs text-on-surface-variant">{fund.block}</div>
-                          </td>
-                          <td className="p-4 font-black">₹{fund.allocated}</td>
-                          <td className="p-4 font-medium text-on-surface-variant hidden sm:table-cell">
-                            ₹{fund.utilized} <span className="text-xs opacity-60">({utilRate}%)</span>
-                            <div className="w-full bg-surface-container h-1.5 rounded-full mt-2 overflow-hidden">
-                              <div className={`h-full rounded-full ${utilRate > 80 ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.min(utilRate, 100)}%` }}></div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-[10px] uppercase font-black tracking-widest rounded-full ${fund.status === 'Active' ? 'bg-green-500/10 text-green-500' : fund.status === 'Frozen' ? 'bg-on-surface-variant/10 text-on-surface-variant' : 'bg-error/10 text-error'}`}>
-                              {fund.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right space-x-2">
-                            <button onClick={() => reallocateFunds(fund.id)} className="text-primary hover:bg-primary/10 p-2 rounded-lg transition-colors tooltip-trigger" title="Reallocate">
-                              <span className="material-symbols-outlined text-[20px]">sync_alt</span>
-                            </button>
-                            <button onClick={() => toggleFundStatus(fund.id, fund.status)} className={`${fund.status === 'Frozen' ? 'text-green-500 hover:bg-green-500/10' : 'text-error hover:bg-error/10'} p-2 rounded-lg transition-colors tooltip-trigger`} title={fund.status === 'Frozen' ? 'Unfreeze' : 'Freeze'}>
-                              <span className="material-symbols-outlined text-[20px]">{fund.status === 'Frozen' ? 'ac_unit' : 'block'}</span>
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="space-y-3 border-y border-outline-variant/10 py-4 mb-4">
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant/50 font-bold">Status</span>
+                  <span className={`font-black px-2 py-0.5 rounded ${
+                    selectedBlock.frozen_status === 'frozen'
+                      ? 'bg-blue-500/10 text-blue-500'
+                      : selectedBlock.status === 'CRITICAL'
+                        ? 'bg-error/10 text-error'
+                        : 'bg-green-500/10 text-green-500'
+                  }`}>
+                    {selectedBlock.frozen_status === 'frozen' ? 'FROZEN' : selectedBlock.status}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant/50 font-bold">Fund Utilization</span>
+                  <span className="font-black text-on-surface">{selectedBlock.fund_utilisation_pct || 0}%</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant/50 font-bold">Farmers</span>
+                  <span className="font-black text-on-surface">{(selectedBlock.farmer_count || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant/50 font-bold">Anomaly Count</span>
+                  <span className={`font-black ${
+                    (selectedBlock.anomaly_count || 0) >= 2 ? 'text-error' : 'text-on-surface'
+                  }`}>{selectedBlock.anomaly_count || 0}</span>
+                </div>
               </div>
+
+              {/* Block Anomalies */}
+              {blockAnomalies.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-3">
+                    AI Anomaly Flags ({blockAnomalies.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {blockAnomalies.map((a, idx) => (
+                      <div key={idx} className="p-3 bg-error/5 border border-error/10 rounded-xl">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                            a.severity === 'high' ? 'bg-error text-white' : 'bg-amber-500/20 text-amber-600'
+                          }`}>
+                            {a.anomaly_score || '—'}
+                          </span>
+                          <span className="text-[10px] font-black text-error uppercase tracking-widest">
+                            {(a.anomaly_type || '').replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface leading-relaxed">
+                          {a.description || a.explanation?.substring(0, 100)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Freeze Impact */}
+              {selectedBlock.frozen_status === 'frozen' && (
+                <div className="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                  <h4 className="text-xs font-black text-blue-600 mb-2">Active Restrictions</h4>
+                  <ul className="space-y-1.5 text-xs text-blue-600/80">
+                    <li className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[12px]">block</span>
+                      BDO cannot assign new field agents
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[12px]">block</span>
+                      BDO cannot assign farmers to agents
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[12px]">block</span>
+                      Fund disbursements are halted
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[12px]">schedule</span>
+                      Pending assignments are locked
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant/10 text-center">
+              <span className="material-symbols-outlined text-4xl text-on-surface-variant/30">touch_app</span>
+              <p className="text-sm text-on-surface-variant/50 font-bold mt-3">
+                Select a block to view details and anomalies
+              </p>
             </div>
           )}
 
-          {/* USERS TAB */}
-          {activeTab === 'users' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-headline text-xl font-bold text-on-surface">Personnel Directory</h3>
-                <button className="bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-[0_4px_12px_rgba(99,102,241,0.3)] hover:shadow-[0_6px_16px_rgba(99,102,241,0.4)] transition-all flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">person_add</span>
-                  Add User
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {usersData.map(user => (
-                  <div key={user.id} className="bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div className={`absolute top-0 left-0 w-1.5 h-full ${user.status === 'Active' ? 'bg-green-500' : user.status === 'Suspended' ? 'bg-error' : 'bg-amber-500'}`}></div>
-                    
-                    <div className="flex items-start justify-between">
-                      <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center font-black text-on-surface text-xl mb-4">
-                        {user.name.charAt(0)}
-                      </div>
-                      <span className={`px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest rounded-full ${user.status === 'Active' ? 'text-green-500 bg-green-500/10' : user.status === 'Suspended' ? 'text-error bg-error/10' : 'text-amber-500 bg-amber-500/10'}`}>
-                        {user.status}
+          {/* Action Log */}
+          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/10">
+            <h3 className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-4">
+              Session Action Log
+            </h3>
+            {actionLog.length === 0 ? (
+              <p className="text-xs text-on-surface-variant/40 italic text-center py-4">
+                No actions taken in this session yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {actionLog.map((entry, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 bg-surface-container-low rounded-xl">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      entry.action === 'FROZEN' ? 'bg-error/10' : 'bg-green-500/10'
+                    }`}>
+                      <span className={`material-symbols-outlined text-[12px] ${
+                        entry.action === 'FROZEN' ? 'text-error' : 'text-green-500'
+                      }`}>
+                        {entry.action === 'FROZEN' ? 'lock' : 'lock_open'}
                       </span>
                     </div>
-
-                    <h4 className="font-bold text-lg text-on-surface">{user.name}</h4>
-                    <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider mt-1">{user.role}</p>
-                    <p className="text-sm text-on-surface-variant font-medium flex items-center gap-1 mt-3">
-                      <span className="material-symbols-outlined text-[16px]">location_on</span>
-                      {user.jurisdiction}
-                    </p>
-
-                    <div className="mt-6 pt-4 border-t border-outline-variant/10 flex justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => reassignUser(user.name)} className="flex-1 bg-surface-container-low hover:bg-surface-container py-2 rounded-lg text-xs font-bold text-on-surface transition-colors">
-                        Reassign
-                      </button>
-                      <button onClick={() => toggleUserStatus(user.id, user.status)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${user.status === 'Active' ? 'bg-error/10 text-error hover:bg-error/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'}`}>
-                        {user.status === 'Active' ? 'Suspend' : 'Reinstate'}
-                      </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-on-surface truncate">
+                        {entry.block} — {entry.action}
+                      </p>
+                      <p className="text-[10px] text-on-surface-variant/50 font-bold">
+                        {entry.time} • {entry.actor}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* KPI TAB */}
-          {activeTab === 'kpi' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
-              <div className="text-center mb-10">
-                <h3 className="font-headline text-2xl font-black text-on-surface">Target Adjustments (Q3)</h3>
-                <p className="text-sm font-medium text-on-surface-variant mt-2">Set state-wide baseline goals to push to down-level administration.</p>
-              </div>
-
-              <div className="space-y-8 bg-surface border border-outline-variant/20 p-8 sm:p-10 rounded-[2rem] shadow-sm relative">
-                
-                {/* Metric 1 */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-end">
-                    <label className="text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                      <span className="material-symbols-outlined text-green-500">grass</span>
-                      Seed Distribution <span className="text-[10px] text-on-surface-variant lowercase normal-case">(metric tons)</span>
-                    </label>
-                    <span className="font-black text-xl text-green-500">{kpiTargets.seedDistribution.toLocaleString()}</span>
-                  </div>
-                  <input 
-                    type="range" min="10000" max="50000" step="500" 
-                    value={kpiTargets.seedDistribution}
-                    onChange={(e) => setKpiTargets({...kpiTargets, seedDistribution: parseInt(e.target.value)})}
-                    className="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-green-500"
-                  />
-                  <div className="flex justify-between text-[10px] font-bold text-on-surface-variant">
-                    <span>10K</span>
-                    <span>50K</span>
-                  </div>
-                </div>
-
-                {/* Metric 2 */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-end">
-                    <label className="text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                      <span className="material-symbols-outlined text-amber-500">assignment_turned_in</span>
-                      Soil Health Cards <span className="text-[10px] text-on-surface-variant lowercase normal-case">(issuance goal)</span>
-                    </label>
-                    <span className="font-black text-xl text-amber-500">{kpiTargets.soilHealthCards.toLocaleString()}</span>
-                  </div>
-                  <input 
-                    type="range" min="50000" max="500000" step="10000" 
-                    value={kpiTargets.soilHealthCards}
-                    onChange={(e) => setKpiTargets({...kpiTargets, soilHealthCards: parseInt(e.target.value)})}
-                    className="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-amber-500"
-                  />
-                  <div className="flex justify-between text-[10px] font-bold text-on-surface-variant">
-                    <span>50K</span>
-                    <span>500K</span>
-                  </div>
-                </div>
-
-                {/* Metric 3 */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-end">
-                    <label className="text-sm font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                      <span className="material-symbols-outlined text-blue-500">water_drop</span>
-                      Irrigation Setup <span className="text-[10px] text-on-surface-variant lowercase normal-case">(hectares covered)</span>
-                    </label>
-                    <span className="font-black text-xl text-blue-500">{kpiTargets.irrigationSetup.toLocaleString()}</span>
-                  </div>
-                  <input 
-                    type="range" min="100" max="2000" step="50" 
-                    value={kpiTargets.irrigationSetup}
-                    onChange={(e) => setKpiTargets({...kpiTargets, irrigationSetup: parseInt(e.target.value)})}
-                    className="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  />
-                  <div className="flex justify-between text-[10px] font-bold text-on-surface-variant">
-                    <span>100</span>
-                    <span>2000</span>
-                  </div>
-                </div>
-
-                <div className="pt-6 mt-6 border-t border-outline-variant/20 flex justify-end">
-                  <button onClick={saveKpis} className="bg-primary text-on-primary px-8 py-3.5 rounded-xl font-black text-sm uppercase tracking-widest shadow-[0_8px_24px_rgba(var(--md-sys-color-primary-rgb),0.4)] hover:shadow-[0_12px_32px_rgba(var(--md-sys-color-primary-rgb),0.5)] transition-all flex items-center gap-2 transform hover:-translate-y-1">
-                    <span className="material-symbols-outlined">save</span>
-                    Publish Targets
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
+            )}
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

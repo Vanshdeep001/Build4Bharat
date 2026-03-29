@@ -9,6 +9,7 @@ from config import settings
 _allowed_origins = [
     "https://pwa-six-puce.vercel.app",
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://localhost:3000",
 ]
 if settings.FRONTEND_URL and settings.FRONTEND_URL not in _allowed_origins:
@@ -97,6 +98,11 @@ from routes.verifications import router as verifications_router
 from routes.anomalies import router as anomalies_router
 from routes.dashboard import router as dashboard_router
 from routes.notifications import router as notifications_router
+from routes.bdo_dashboard import router as bdo_router
+from routes.whatsapp_webhook import router as whatsapp_router
+from routes.beneficiary_responses import router as beneficiary_responses_router
+from routes.verification import router as verification_router
+from routes.public_dashboard import router as public_dashboard_router
 
 app.include_router(auth_router)
 app.include_router(farmers_router)
@@ -106,6 +112,11 @@ app.include_router(verifications_router)
 app.include_router(anomalies_router)
 app.include_router(dashboard_router)
 app.include_router(notifications_router)
+app.include_router(bdo_router)
+app.include_router(whatsapp_router)
+app.include_router(beneficiary_responses_router)
+app.include_router(verification_router)
+app.include_router(public_dashboard_router)
 
 
 @app.get("/")

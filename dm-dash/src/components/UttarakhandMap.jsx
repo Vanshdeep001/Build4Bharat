@@ -33,89 +33,95 @@ function ChangeView({ center, zoom }) {
   return null;
 }
 
+import { fetchOverview, fetchAdvanceAnalytics } from '../api';
+
 const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
   const [districtData, setDistrictData] = useState([]);
+  const [blockData, setBlockData] = useState([]);
   const [stateMetrics, setStateMetrics] = useState(null);
 
-
   useEffect(() => {
-    // Current dummy data matching the CSV logic in AnalyticalOverview
-    const rawData = [
-      ["Almora", 1200, 0.08, 35, 120],
-      ["Bageshwar", 800, 0.04, 15, 65],
-      ["Chamoli", 1500, 0.07, 2, 20],
-      ["Champawat", 750, 0.03, 72, 552],
-      ["Dehradun", 3500, 0.25, 145, 420],
-      ["Haridwar", 2800, 0.18, 10, 20],
-      ["Nainital", 1800, 0.12, 75, 210],
-      ["Pauri Garhwal", 1600, 0.11, 48, 145],
-      ["Pithoragarh", 1400, 0.09, 38, 130],
-      ["Rudraprayag", 900, 0.05, 22, 85],
-      ["Tehri Garhwal", 1700, 0.1, 52, 160],
-      ["Udham Singh Nagar", 2400, 0.16, 110, 340],
-      ["Uttarkashi", 1350, 0.08, 32, 215],
-    ];
+    let active = true;
 
-    // Find maximums for normalization to ensure score stays 0-100
-    const maxAR = Math.max(...rawData.map((d) => d[3]));
-    const maxGR = Math.max(...rawData.map((d) => d[4]));
+    const loadMapData = async () => {
+      // Load district-level data
+      const res = await fetchOverview();
+      if (!active || !res || !res.districts) return;
 
-    const processed = rawData.map(([name, fund, ben, ar, gr]) => {
-      // Normalizing to 0-100 for proper weighting
-      const normAR = (ar / maxAR) * 100;
-      const normGR = (gr / maxGR) * 100;
+      const rawData = res.districts.filter(d => !!districtCoords[d.district_name]);
 
-      // Risk Score Formula: (0.6 * AR) + (0.4 * GR)
-      const riskScore = 0.6 * normAR + 0.4 * normGR;
-      const finalScore = Math.max(0, 100 - riskScore);
+      const maxAR = Math.max(...rawData.map(d => d.open_anomalies), 1);
+      const maxGR = Math.max(...rawData.map(d => d.total_disputes), 1);
 
-      let status = "On-Track";
-      let color = "#22c55e"; // Green
-      if (finalScore < 50) {
-        status = "Critical";
-        color = "#ef4444"; // Red
-      } else if (finalScore < 80) {
-        status = "At Risk";
-        color = "#eab308"; // Yellow
+      const processed = rawData.map(d => {
+        const normAR = (d.open_anomalies / maxAR) * 100;
+        const normGR = (d.total_disputes / maxGR) * 100;
+        const riskScore = 0.6 * normAR + 0.4 * normGR;
+        const finalScore = Math.max(0, 100 - riskScore);
+
+        let status = "On-Track";
+        let color = "#22c55e"; 
+        if (finalScore < 50) {
+          status = "Critical";
+          color = "#ef4444"; 
+        } else if (finalScore < 80) {
+          status = "At Risk";
+          color = "#eab308"; 
+        }
+
+        return { 
+          name: d.district_name, 
+          fund: d.total_fund_utilised / 10000000, 
+          ar: d.open_anomalies, 
+          gr: d.total_disputes, 
+          score: finalScore.toFixed(0), 
+          status, 
+          color 
+        };
+      });
+
+      setDistrictData(processed);
+
+      const totalFunds = processed.reduce((sum, d) => sum + d.fund, 0);
+      const fundWeightedSum = processed.reduce((sum, d) => sum + (parseFloat(d.score) * d.fund), 0);
+      const fundWeightedAvg = totalFunds > 0 ? fundWeightedSum / totalFunds : 100;
+
+      const criticalCount = processed.filter(d => d.status === "Critical").length;
+      const criticalRatio = criticalCount / Math.max(rawData.length, 1);
+
+      const stateScoreValue = (0.7 * fundWeightedAvg) + (0.3 * (1 - criticalRatio) * 100);
+      
+      let stateStatus = "On-Track";
+      let stateColor = "text-green-500";
+      let stateBg = "bg-green-500/10";
+      if (stateScoreValue < 50) {
+        stateStatus = "Critical";
+        stateColor = "text-error";
+        stateBg = "bg-error/10";
+      } else if (stateScoreValue < 80) {
+        stateStatus = "At Risk";
+        stateColor = "text-amber-500";
+        stateBg = "bg-amber-500/10";
       }
 
-      return { name, fund, ar, gr, score: finalScore.toFixed(0), status, color };
-    });
+      setStateMetrics({
+        score: stateScoreValue.toFixed(1),
+        status: stateStatus,
+        color: stateColor,
+        bgColor: stateBg,
+        criticalCount,
+        fundWeightedAvg: fundWeightedAvg.toFixed(1)
+      });
 
-    setDistrictData(processed);
+      // Load block-level data for map markers
+      const analytics = await fetchAdvanceAnalytics();
+      if (active && analytics && analytics.block_map_data) {
+        setBlockData(analytics.block_map_data);
+      }
+    };
 
-    // Compute State Score
-    const totalFunds = processed.reduce((sum, d) => sum + d.fund, 0);
-    const fundWeightedSum = processed.reduce((sum, d) => sum + (parseFloat(d.score) * d.fund), 0);
-    const fundWeightedAvg = fundWeightedSum / totalFunds;
-
-    const criticalCount = processed.filter(d => d.status === "Critical").length;
-    const criticalRatio = criticalCount / 13;
-
-    // State Score Formula
-    const stateScoreValue = (0.7 * fundWeightedAvg) + (0.3 * (1 - criticalRatio) * 100);
-    
-    let stateStatus = "On-Track";
-    let stateColor = "text-green-500";
-    let stateBg = "bg-green-500/10";
-    if (stateScoreValue < 50) {
-      stateStatus = "Critical";
-      stateColor = "text-error";
-      stateBg = "bg-error/10";
-    } else if (stateScoreValue < 80) {
-      stateStatus = "At Risk";
-      stateColor = "text-amber-500";
-      stateBg = "bg-amber-500/10";
-    }
-
-    setStateMetrics({
-      score: stateScoreValue.toFixed(1),
-      status: stateStatus,
-      color: stateColor,
-      bgColor: stateBg,
-      criticalCount,
-      fundWeightedAvg: fundWeightedAvg.toFixed(1)
-    });
+    loadMapData();
+    return () => { active = false; };
   }, []);
 
   const center =
@@ -140,7 +146,83 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
           attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
         />
 
-        {/* District Markers */}
+        {/* Block-level markers (smaller, more specific) */}
+        {blockData.map((b) => {
+          const isCritical = b.status === "Critical";
+          const isAtRisk = b.status === "At Risk";
+          
+          return (
+            <CircleMarker
+              key={b.id}
+              center={[b.lat, b.lng]}
+              pathOptions={{
+                fillColor: b.color,
+                color: b.color,
+                fillOpacity: isCritical ? 0.8 : 0.5,
+                weight: isCritical ? 3 : 1.5,
+                opacity: 0.7,
+              }}
+              radius={isCritical ? 10 : isAtRisk ? 8 : 6}
+            >
+              <Popup className="custom-popup">
+                <div className="p-4 min-w-[220px] bg-surface rounded-2xl">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-headline font-black text-primary text-lg leading-none">
+                        {b.name}
+                      </h3>
+                      <p className="text-[10px] text-on-surface-variant font-bold mt-0.5">{b.district}</p>
+                    </div>
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full ${isCritical ? 'animate-ping' : 'animate-pulse'}`}
+                      style={{ backgroundColor: b.color }}
+                    ></div>
+                  </div>
+
+                  <div className="mt-3 space-y-2 border-y border-outline-variant/10 py-3 mb-3">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                      <span>Risk Score: </span>
+                      <span className="text-sm font-black text-primary">{b.score}/100</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                      <span>Anomalies</span>
+                      <span className={`text-xs font-black ${b.anomaly_count > 0 ? 'text-error' : 'text-green-500'}`}>
+                        {b.anomaly_count}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                      <span>Dispute Rate</span>
+                      <span className={`text-xs font-black ${b.dispute_rate > 15 ? 'text-error' : 'text-green-500'}`}>
+                        {b.dispute_rate}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                      <span>Status</span>
+                      <span
+                        className="text-xs font-black px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: `${b.color}20`,
+                          color: b.color,
+                        }}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isCritical && (
+                    <div className="p-2 bg-error/10 border border-error/20 rounded-lg mb-2 text-[10px] text-error font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">warning</span>
+                      Severe anomaly — DM attention required
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+
+        {/* District-level markers (larger, overview) */}
         {districtData.map((d) => (
           <CircleMarker
             key={d.name}
@@ -148,16 +230,14 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
             pathOptions={{
               fillColor: d.color,
               color: d.color,
-              fillOpacity: 0.6,
+              fillOpacity: 0.3,
               weight: selectedDistrict === d.name ? 10 : 2,
-              opacity: selectedDistrict === d.name ? 0.8 : 0.4,
+              opacity: selectedDistrict === d.name ? 0.8 : 0.3,
             }}
-            radius={selectedDistrict === d.name ? 18 : 12}
+            radius={selectedDistrict === d.name ? 22 : 16}
             eventHandlers={{
               click: () => {
                 onDistrictSelect(d.name);
-                // Also scroll on marker click for better UX if the user doesn't use the popup button
-                // window.scrollTo({ top: 0, behavior: 'smooth' });
               },
             }}
           >
@@ -208,20 +288,12 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
                     </span>
                     View Details
                   </button>
-                  <button className="w-full bg-surface-container-high text-on-surface-variant text-[10px] font-black py-3 rounded-xl uppercase tracking-widest hover:bg-outline-variant/20 transition-all border border-outline-variant/10 flex items-center justify-center gap-2 group">
-                    <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">
-                      insights
-                    </span>
-                    Advanced Analytics
-                  </button>
                 </div>
               </div>
             </Popup>
           </CircleMarker>
         ))}
       </MapContainer>
-
-
 
       {/* Legend Overlay */}
       <div className="absolute top-4 right-4 z-[10] bg-surface/90 backdrop-blur-md p-4 rounded-2xl border border-outline-variant/10 shadow-lg pointer-events-none">
@@ -247,6 +319,11 @@ const UttarakhandMap = ({ selectedDistrict, onDistrictSelect }) => {
               0-49: Critical
             </span>
           </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-outline-variant/10 space-y-1">
+          <p className="text-[8px] font-bold text-on-surface-variant uppercase tracking-widest">Marker Size</p>
+          <p className="text-[9px] text-on-surface-variant/60">Large ring = District</p>
+          <p className="text-[9px] text-on-surface-variant/60">Small dot = Block</p>
         </div>
       </div>
 

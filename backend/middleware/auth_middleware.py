@@ -16,8 +16,26 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
+from database import get_db
+from bson import ObjectId
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    return decode_token(credentials.credentials)
+    payload = decode_token(credentials.credentials)
+    user_id = payload.get("user_id")
+    
+    if user_id:
+        db = get_db()
+        # Check both collections
+        try:
+            oid = ObjectId(user_id)
+            user_exists = await db.field_agents.count_documents({"_id": oid}) or await db.users.count_documents({"_id": oid})
+        except Exception:
+            user_exists = await db.field_agents.count_documents({"_id": user_id}) or await db.users.count_documents({"_id": user_id})
+            
+        if not user_exists:
+            raise HTTPException(status_code=401, detail="User not found or session stale")
+            
+    return payload
 
 
 def require_role(*roles):

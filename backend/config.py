@@ -19,5 +19,10 @@ class Settings:
 
     FRONTEND_URL: str = os.getenv("FRONTEND_URL")
 
+    # WhatsApp Cloud API
+    WHATSAPP_ACCESS_TOKEN: str = os.getenv("WHATSAPP_ACCESS_TOKEN", "mock_token")
+    WHATSAPP_PHONE_NUMBER_ID: str = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+    WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN", "pmddky_verify_2024")
+
 
 settings = Settings()

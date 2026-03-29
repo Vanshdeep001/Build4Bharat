@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   ScatterChart, Scatter, ZAxis
 } from 'recharts';
+import { fetchAdvanceAnalytics } from '../api';
 
 // --- Reusable Custom Tooltip ---
 const CustomTooltip = ({ active, payload, label }) => {
@@ -27,12 +28,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // --- Sub-components ---
 
-const FundUtilizationChart = ({ district }) => {
-  const data = useMemo(() => [
-    { name: 'Utilized', value: Math.floor(Math.random() * 400 + 400), color: '#3b82f6' }, // blue-500
-    { name: 'Idle', value: Math.floor(Math.random() * 200 + 50), color: '#f59e0b' },     // amber-500
-    { name: 'Pending Allocation', value: Math.floor(Math.random() * 100 + 50), color: '#94a3b8' } // slate-400
-  ], [district]);
+const FundUtilizationChart = ({ chartData }) => {
+  const data = chartData ? [
+    { name: 'Utilized', value: chartData.utilized, color: '#3b82f6' }, // blue-500
+    { name: 'Idle', value: chartData.idle, color: '#f59e0b' },         // amber-500
+    { name: 'Pending Allocation', value: chartData.pending, color: '#94a3b8' } // slate-400
+  ] : [];
 
   return (
     <div className="h-[250px] w-full">
@@ -65,14 +66,8 @@ const FundUtilizationChart = ({ district }) => {
   );
 };
 
-const AnomalyBarChart = ({ district }) => {
-  const data = useMemo(() => {
-    return ['Central', 'North', 'South', 'East', 'West'].map(name => ({
-      name,
-      officer: Math.floor(Math.random() * 100 + 50),
-      farmer: Math.floor(Math.random() * 100 + 30),
-    }));
-  }, [district]);
+const AnomalyBarChart = ({ chartData }) => {
+  const data = chartData || [];
 
   return (
     <div className="h-[250px] w-full">
@@ -98,19 +93,8 @@ const AnomalyBarChart = ({ district }) => {
   );
 };
 
-const BeneficiaryScatter = ({ district }) => {
-  const data = useMemo(() => {
-    const baseData = Array.from({ length: 15 }, (_, i) => ({
-      x: Math.floor(Math.random() * 80 + 20), // Funds Utilized (Lakhs)
-      y: Math.floor(Math.random() * 800 + 200), // Beneficiaries
-      z: 200,
-      outlier: false
-    }));
-    // Add 2 intentional outliers
-    baseData.push({ x: 90, y: 150, z: 400, outlier: true, name: "Outlier Block A" });
-    baseData.push({ x: 85, y: 120, z: 400, outlier: true, name: "Outlier Block B" });
-    return baseData;
-  }, [district]);
+const BeneficiaryScatter = ({ chartData }) => {
+  const data = chartData || [];
 
   return (
     <div className="h-[250px] w-full">
@@ -130,13 +114,8 @@ const BeneficiaryScatter = ({ district }) => {
   );
 };
 
-const GrievanceDonut = ({ district }) => {
-  const data = useMemo(() => [
-    { name: 'Seeds Quality', value: Math.floor(Math.random() * 100 + 50), color: '#ef4444' }, // red-500
-    { name: 'Payment Delay', value: Math.floor(Math.random() * 150 + 100), color: '#f97316' }, // orange-500
-    { name: 'Fertilizer Shortage', value: Math.floor(Math.random() * 80 + 40), color: '#eab308' }, // yellow-500
-    { name: 'Technical Issues', value: Math.floor(Math.random() * 40 + 20), color: '#8b5cf6' }, // violet-500
-  ], [district]);
+const GrievanceDonut = ({ chartData }) => {
+  const data = chartData || [];
 
   return (
     <div className="h-[250px] w-full">
@@ -172,17 +151,8 @@ const GrievanceDonut = ({ district }) => {
   );
 };
 
-const KPIPredictions = ({ district }) => {
-  const kpis = useMemo(() => [
-    { name: 'Seed distribution', progress: Math.floor(Math.random() * 30 + 70), color: 'bg-green-500' },
-    { name: 'Fertilizer distribution', progress: Math.floor(Math.random() * 40 + 40), color: 'bg-blue-500' },
-    { name: 'Pesticide / crop protection kits', progress: Math.floor(Math.random() * 50 + 20), color: 'bg-orange-500' },
-    { name: 'Soil Health Cards', progress: Math.floor(Math.random() * 20 + 80), color: 'bg-purple-500' },
-    { name: 'Agricultural tools / equipment', progress: Math.floor(Math.random() * 40 + 30), color: 'bg-yellow-500' },
-    { name: 'Soil testing (sample collection)', progress: Math.floor(Math.random() * 30 + 60), color: 'bg-teal-500' },
-    { name: 'Irrigation support setup', progress: Math.floor(Math.random() * 40 + 40), color: 'bg-cyan-500' },
-    { name: 'Crop advisory visits', progress: Math.floor(Math.random() * 20 + 75), color: 'bg-indigo-500' }
-  ], [district]);
+const KPIPredictions = ({ chartData }) => {
+  const kpis = chartData || [];
 
   return (
     <div className="flex flex-col gap-4 w-full max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
@@ -208,6 +178,27 @@ const KPIPredictions = ({ district }) => {
 // --- Main Component ---
 
 const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchAdvanceAnalytics().then(res => {
+      if (active && res) setData(res);
+    }).catch(console.error);
+
+    return () => { active = false; };
+  }, []);
+
+  if (!data) return <div className="p-8 text-center text-on-surface-variant font-bold opacity-50 animate-pulse">Loading Advanced Intelligence...</div>;
+
+  // Filter verification/scatter data if a district is selected
+  let currentVerification = data.verification_gap || [];
+  let currentScatter = data.beneficiary_scatter || [];
+  
+  if (selectedDistrict && selectedDistrict !== 'Uttarakhand') {
+    currentScatter = currentScatter.filter(d => d.district === selectedDistrict);
+  }
+
   return (
     <section className="bg-surface-container-lowest rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-sm mt-10">
       <div className="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container/30">
@@ -220,7 +211,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               Micro-Analytical Graphs
             </h3>
             <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest opacity-60">
-              {selectedDistrict !== 'Uttarakhand' ? `Data Context: ${selectedDistrict}` : 'Statewide Aggregation'}
+              {selectedDistrict && selectedDistrict !== 'Uttarakhand' ? `Data Context: ${selectedDistrict} Highlights` : 'Statewide Aggregation'}
             </p>
           </div>
         </div>
@@ -239,7 +230,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               <span className="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
               <h4 className="font-headline font-bold text-on-surface">Fund & Utilization</h4>
             </div>
-            <FundUtilizationChart district={selectedDistrict} />
+            <FundUtilizationChart chartData={data.fund_utilization} />
           </div>
 
           {/* Card 2: Grievance Breakdown */}
@@ -248,7 +239,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               <span className="material-symbols-outlined text-amber-500 text-xl">report</span>
               <h4 className="font-headline font-bold text-on-surface">Grievance Categories</h4>
             </div>
-            <GrievanceDonut district={selectedDistrict} />
+            <GrievanceDonut chartData={data.grievance_categories} />
           </div>
 
           {/* Card 3: Beneficiary Coverage */}
@@ -260,7 +251,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               </div>
               <span className="text-[8px] font-black bg-error/10 text-error px-2 py-0.5 rounded-full uppercase tracking-widest">Outlier Detection</span>
             </div>
-            <BeneficiaryScatter district={selectedDistrict} />
+            <BeneficiaryScatter chartData={currentScatter} />
           </div>
 
           {/* Card 4: Anomaly Intelligence (Spans 2 cols on XL) */}
@@ -272,7 +263,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               </div>
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60 text-right">Officer vs Farmer</p>
             </div>
-            <AnomalyBarChart district={selectedDistrict} />
+            <AnomalyBarChart chartData={currentVerification} />
           </div>
 
           {/* Card 5: KPI Predictions */}
@@ -281,7 +272,7 @@ const AdvanceAnalyticsGraphs = ({ selectedDistrict }) => {
               <span className="material-symbols-outlined text-teal-500 text-xl">speed</span>
               <h4 className="font-headline font-bold text-on-surface">KPI Predictions</h4>
             </div>
-            <KPIPredictions district={selectedDistrict} />
+            <KPIPredictions chartData={data.kpi_progress} />
           </div>
 
         </div>
