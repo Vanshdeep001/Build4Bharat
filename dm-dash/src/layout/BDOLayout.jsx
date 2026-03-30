@@ -109,12 +109,7 @@ function BDOSideNav() {
         </NavLink>
       </nav>
 
-      <div className="px-4 mt-auto mb-4">
-        <button className="w-full bg-primary-fixed-dim text-primary py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-white transition-colors">
-          <span className="material-symbols-outlined text-sm">description</span>
-          Export Block Report
-        </button>
-      </div>
+
 
       <div className="border-t border-white/10 pt-4 flex flex-col gap-1">
         <a

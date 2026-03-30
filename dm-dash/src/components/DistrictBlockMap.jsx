@@ -7,6 +7,7 @@ import {
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { fetchAdvanceAnalytics } from "../api";
 
 const districtCoords = {
   Almora: [29.5892, 79.6467],
@@ -32,51 +33,8 @@ function ChangeView({ center, zoom }) {
   return null;
 }
 
-// Generate dummy blocks around a district center
-const generateDummyBlocks = (districtName, center) => {
-  if (!center) return [];
-  const [lat, lng] = center;
-  const blocks = [
-    { name: `${districtName} Central Block`, latOffset: 0, lngOffset: 0 },
-    { name: `${districtName} North Block`, latOffset: 0.15, lngOffset: 0.05 },
-    { name: `${districtName} South Block`, latOffset: -0.12, lngOffset: -0.05 },
-    { name: `${districtName} East Block`, latOffset: 0.05, lngOffset: 0.18 },
-    { name: `${districtName} West Block`, latOffset: -0.05, lngOffset: -0.15 },
-  ];
 
-  return blocks.map((b, index) => {
-    const ar = Math.floor(Math.random() * 50) + 10;
-    const gr = Math.floor(Math.random() * 150) + 20;
 
-    // Normalizing dummy data to 0-100 for score calculation
-    const normAR = (ar / 60) * 100; 
-    const normGR = (gr / 170) * 100;
-    const riskScore = 0.6 * normAR + 0.4 * normGR;
-    const finalScore = Math.max(0, 100 - riskScore);
-
-    let status = "On-Track";
-    let color = "#22c55e"; // Green
-    if (finalScore < 50) {
-      status = "Critical";
-      color = "#ef4444"; // Red
-    } else if (finalScore < 80) {
-      status = "At Risk";
-      color = "#eab308"; // Yellow
-    }
-
-    return {
-      id: `${districtName}-block-${index}`,
-      name: b.name,
-      lat: lat + b.latOffset,
-      lng: lng + b.lngOffset,
-      ar,
-      gr,
-      score: finalScore.toFixed(0),
-      status,
-      color,
-    };
-  });
-};
 
 const DistrictBlockMap = ({ selectedDistrict }) => {
   const [blockData, setBlockData] = useState([]);
@@ -91,16 +49,19 @@ const DistrictBlockMap = ({ selectedDistrict }) => {
   const zoom = selectedDistrict && selectedDistrict !== "Uttarakhand" ? 10 : 8;
 
   useEffect(() => {
-    if (selectedDistrict && selectedDistrict !== "Uttarakhand") {
-      const bData = generateDummyBlocks(selectedDistrict, districtCoords[selectedDistrict]);
-      setBlockData(bData);
-    } else {
-      let allBlocks = [];
-      Object.entries(districtCoords).forEach(([distName, coords]) => {
-        allBlocks = [...allBlocks, ...generateDummyBlocks(distName, coords)];
-      });
-      setBlockData(allBlocks);
-    }
+    let active = true;
+    fetchAdvanceAnalytics().then((res) => {
+      if (!active || !res || !res.block_map_data) return;
+      let data = res.block_map_data;
+      if (selectedDistrict && selectedDistrict !== "Uttarakhand") {
+        data = data.filter((d) => d.district === selectedDistrict);
+      }
+      setBlockData(data);
+    }).catch(console.error);
+
+    return () => {
+      active = false;
+    };
   }, [selectedDistrict]);
 
   return (

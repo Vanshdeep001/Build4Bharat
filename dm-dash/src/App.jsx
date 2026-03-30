@@ -45,7 +45,6 @@ export default function App() {
         <Route path="scheme-convergence" element={<SchemeConvergencePage />} />
         <Route path="advance-analytics" element={<AdvanceAnalyticsPage />} />
         <Route path="admin-actions" element={<AdministrativeActionsPage />} />
-        <Route path="grievances" element={<GrievancesPage />} />
         <Route path="ai-anomalies" element={<AiAnomaliesPage />} />
       </Route>
 

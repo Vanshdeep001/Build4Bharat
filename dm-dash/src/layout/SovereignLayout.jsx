@@ -2,11 +2,20 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
+import { generateAndDownloadReport } from "../utils/reportGenerator";
 
 const navLinkBase =
   "flex items-center gap-3 px-4 py-3 mx-2 transition-all rounded-lg";
 
-function SideNav({ onLogout }) {
+function SideNav({ onLogout, selectedDistrict }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateReport = async () => {
+    setIsGenerating(true);
+    await generateAndDownloadReport(selectedDistrict);
+    setIsGenerating(false);
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-50 bg-[#00113a] dark:bg-[#00081a] shadow-[8px_0_24px_-4px_rgba(26,28,28,0.06)] flex flex-col py-6 gap-2">
       <div className="px-6 mb-8 invisible">
@@ -72,20 +81,6 @@ function SideNav({ onLogout }) {
         </NavLink>
 
         <NavLink
-          to="/dm/grievances"
-          className={({ isActive }) =>
-            isActive
-              ? `${navLinkBase} bg-[#002366] text-white translate-x-1 duration-200`
-              : `${navLinkBase} text-[#758dd5] hover:text-white hover:bg-[#002366]/50`
-          }
-        >
-          <span className="material-symbols-outlined">forum</span>
-          <span className="font-body font-medium text-[0.875rem]">
-            Grievances
-          </span>
-        </NavLink>
-
-        <NavLink
           to="/dm/advance-analytics"
           className={({ isActive }) =>
             isActive
@@ -127,9 +122,19 @@ function SideNav({ onLogout }) {
       </nav>
 
       <div className="px-4 mt-auto mb-4">
-        <button className="w-full bg-primary-fixed-dim text-primary py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-white transition-colors">
-          <span className="material-symbols-outlined text-sm">description</span>
-          Generate Report
+        <button 
+          onClick={handleGenerateReport}
+          disabled={isGenerating}
+          className={`w-full text-primary py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+            isGenerating ? 'bg-primary/20 cursor-wait' : 'bg-primary-fixed-dim hover:bg-white'
+          }`}
+        >
+          {isGenerating ? (
+            <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+          ) : (
+            <span className="material-symbols-outlined text-sm">description</span>
+          )}
+          {isGenerating ? 'Compiling Dataset..' : 'Generate Report'}
         </button>
       </div>
 
@@ -167,7 +172,7 @@ export function SovereignLayout() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <SideNav onLogout={handleLogout} />
+      <SideNav onLogout={handleLogout} selectedDistrict={selectedDistrict} />
       <main className="ml-64 min-h-screen">
         <Navbar
           selectedDistrict={selectedDistrict}
