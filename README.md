@@ -234,9 +234,13 @@ Injected anomalies for demonstration
 Grievances for cross-validation
 
 👥 Team Nibbles
+
 Vansh Deep Srivastava
+
 Veer Vikram Singh
+
 Chirrayu Sharma
+
 Khushi Verma
 
 🔮 Future Scope
