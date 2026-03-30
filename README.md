@@ -236,12 +236,16 @@ Grievances for cross-validation
 👥 Team Nibbles
 
 Vansh Deep Srivastava
+srivastavavanshdeep18@gmail.com
 
 Veer Vikram Singh
+19.ever.30@gmail.com
 
 Chirrayu Sharma
+chirrayusharma@gmail.com 
 
-Khushi Verma
+Khushi Verma 
+vkhushi1802@gmail.com
 
 🔮 Future Scope
 AI-based anomaly detection (Isolation Forest / ML models)
