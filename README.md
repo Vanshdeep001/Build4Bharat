@@ -245,7 +245,7 @@ Chirrayu Sharma
 chirrayusharma@gmail.com 
 
 Khushi Verma 
-vkhushi1802@gmail.com
+ver.khu.shi.18@gmail.com
 
 🔮 Future Scope
 AI-based anomaly detection (Isolation Forest / ML models)
